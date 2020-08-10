@@ -19,6 +19,9 @@
 #include "TRandom3.h"
 #include "AliAnalysisManager.h"
 
+#include <fstream>
+
+
 class AliConversionPhotonBase;
 class TRandom3;
 class TList;
@@ -201,6 +204,7 @@ class AliV0ReaderV1 : public AliAnalysisTaskSE {
     Double_t             GetPsiPair(const AliESDv0* v0, const AliExternalTrackParam *positiveparam, const AliExternalTrackParam *negativeparam, const Double_t convpos[3]) const;
 
 
+    Int_t    fMyCount;
     Bool_t         kAddv0sInESDFilter;            // Add PCM v0s to AOD created in ESD filter
     TBits		   *fPCMv0BitField;               //! Pointer to bitfield of PCM v0s
     AliConversionPhotonCuts  *fConversionCuts;    //-> Pointer to the ConversionCut Selection
@@ -288,6 +292,7 @@ class AliV0ReaderV1 : public AliAnalysisTaskSE {
     vector<Int_t>  fVectorFoundGammas;            //! vector with found MC labels of gammas
     TString       fCurrentFileName;               //! current file name
     Bool_t        fMCFileChecked;                 //!
+    ofstream myfile;
 
   private:
     AliV0ReaderV1(AliV0ReaderV1 &original);

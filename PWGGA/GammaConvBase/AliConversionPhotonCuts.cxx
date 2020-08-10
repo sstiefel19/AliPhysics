@@ -1419,7 +1419,7 @@ Bool_t AliConversionPhotonCuts::TrackIsSelected(AliConversionPhotonBase *photon,
 }
 
 ///________________________________________________________________________
-Bool_t AliConversionPhotonCuts::PhotonIsSelected(AliConversionPhotonBase *photon, AliVEvent * event){
+Bool_t AliConversionPhotonCuts::PhotonIsSelected(AliConversionPhotonBase *photon, AliVEvent * event, ofstream* logfile){
   //Selection of Reconstructed Photons
 
   FillPhotonCutIndex(kPhotonIn);
@@ -1434,6 +1434,10 @@ Bool_t AliConversionPhotonCuts::PhotonIsSelected(AliConversionPhotonBase *photon
   // Get Tracks
   AliVTrack * negTrack = GetTrack(event, photon->GetTrackLabelNegative());
   AliVTrack * posTrack = GetTrack(event, photon->GetTrackLabelPositive());
+
+  if (logfile){
+    *logfile << negTrack->GetID() << " " << posTrack->GetID() << endl;
+   }
 
   if(!negTrack || !posTrack) {
     FillPhotonCutIndex(kNoTracks);
@@ -1472,7 +1476,7 @@ Bool_t AliConversionPhotonCuts::PhotonIsSelected(AliConversionPhotonBase *photon
   if (fHistoEtaDistV0s)fHistoEtaDistV0s->Fill(photon->GetPhotonEta());
 
   // dEdx Cuts
-  if(!KappaCuts(photon, event) || !dEdxCuts(negTrack,photon) || !dEdxCuts(posTrack,photon)) {
+  if(!KappaCuts(photon, event) || !dEdxCuts(negTrack,photon,logfile) || !dEdxCuts(posTrack,photon,logfile)) {
     FillPhotonCutIndex(kdEdxCuts);
     return kFALSE;
   }
@@ -1641,7 +1645,7 @@ Bool_t AliConversionPhotonCuts::AcceptanceCuts(AliConversionPhotonBase *photon) 
 
   } else if (fDoShrinkTPCAcceptance == 4){   // accept only photons in eta-phi region from PHOS-PCM (pi0 and eta meson analysis)
     Double_t photonPhi = photon->GetPhotonPhi();
-      
+
     if(photon->GetPhotonEta() > fEtaForPhiCutMin && photon->GetPhotonEta() < fEtaForPhiCutMax ){
       //cout << "A and C side, eta=" << photon->GetPhotonEta() <<  endl;
       if(!(photonPhi>fMinPhiCut  && photonPhi<fMaxPhiCut )){
@@ -1936,7 +1940,7 @@ Bool_t AliConversionPhotonCuts::GetBDTVariableValues(AliConversionPhotonBase *ga
 
 
 ///________________________________________________________________________
-Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionPhotonBase* photon){
+Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionPhotonBase* photon, ofstream* logfile){
   // Supposed to use post calibration
   // Electron Identification Cuts for Photon reconstruction
 
@@ -1949,7 +1953,28 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
   Double_t P=0.;
   Double_t Eta=0.;
 
+  // do again with newly obtained response
+  AliAnalysisManager *man=AliAnalysisManager::GetAnalysisManager();
+  if(man) {
+    AliInputEventHandler* inputHandler = (AliInputEventHandler*) (man->GetInputEventHandler());
+    AliPIDResponse*  aPIDResponse = (AliPIDResponse*)inputHandler->GetPIDResponse();
+    if (logfile){
+            *logfile << aPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kElectron) << endl;
+
+    }
+  }
+  //~ if (logfile){
+    //~ *logfile << "start repeating for same track:\n";
+    //~ for (Int_t i=0; i<5; ++i){
+      //~ *logfile << fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kElectron) << endl;
+     //~ }
+    //~ *logfile << "done\n";
+  //~ }
+  if (logfile) *logfile << electronNSigmaTPC << " " <<  fCurrentTrack->Pt()<< " " << fCurrentTrack->P()<< " " << fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion) << endl;
+
+
   if(fDoElecDeDxPostCalibration){
+    cout << "SFS fDoElecDeDxPostCalibration\n";
     P = fCurrentTrack->P();
     Eta = fCurrentTrack->Eta();
     electronNSigmaTPCCor = GetCorrectedElectronTPCResponse(Charge,electronNSigmaTPC,P,Eta,fCurrentTrack->GetTPCNcls(),photon->GetConversionRadius());
@@ -1965,12 +1990,12 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     if(fDoElecDeDxPostCalibration){
       if( electronNSigmaTPCCor < fPIDnSigmaBelowElectronLine ||  electronNSigmaTPCCor >fPIDnSigmaAboveElectronLine ){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-        return kFALSE;
+        if (logfile) *logfile << "rej 1\n"; return kFALSE;
       }
     } else{
       if( electronNSigmaTPC < fPIDnSigmaBelowElectronLine || electronNSigmaTPC > fPIDnSigmaAboveElectronLine){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-        return kFALSE;
+        if (logfile) *logfile << "rej 2\n"; return kFALSE;
       }
     }
     cutIndex++; //2
@@ -1979,12 +2004,12 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
       if(fDoElecDeDxPostCalibration){
         if( electronNSigmaTPCCor >fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+          if (logfile) *logfile << "rej 3\n"; return kFALSE;
         }
       } else{
         if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+          if (logfile) *logfile << "rej 4\n"; return kFALSE;
         }
       }
     }
@@ -1995,12 +2020,12 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
       if(fDoElecDeDxPostCalibration){
         if( electronNSigmaTPCCor > fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+          if (logfile) *logfile << "rej 5\n"; return kFALSE;
         }
       } else{
         if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+          if (logfile) *logfile << "rej 6\n"; return kFALSE;
         }
       }
     }
@@ -2012,7 +2037,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     if(fCurrentTrack->P()<fPIDMinPKaonRejectionLowP ){
       if( TMath::Abs(fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kKaon))<fPIDnSigmaAtLowPAroundKaonLine){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-        return kFALSE;
+        if (logfile) *logfile << "rej 7\n"; return kFALSE;
       }
     }
   }
@@ -2022,7 +2047,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     if( fCurrentTrack->P()<fPIDMinPProtonRejectionLowP ){
       if( TMath::Abs(fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kProton))<fPIDnSigmaAtLowPAroundProtonLine){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-        return kFALSE;
+        if (logfile) *logfile << "rej 8\n"; return kFALSE;
       }
     }
   }
@@ -2032,7 +2057,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     if( fCurrentTrack->P()<fPIDMinPPionRejectionLowP ){
       if( TMath::Abs(fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion))<fPIDnSigmaAtLowPAroundPionLine){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-        return kFALSE;
+        if (logfile) *logfile << "rej 9\n"; return kFALSE;
       }
     }
   }
@@ -2055,7 +2080,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
             if(fPIDResponse->NumberOfSigmasTOF(fCurrentTrack, AliPID::kElectron)>fTofPIDnSigmaAboveElectronLine ||
                fPIDResponse->NumberOfSigmasTOF(fCurrentTrack, AliPID::kElectron)<fTofPIDnSigmaBelowElectronLine ){
                 if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-                return kFALSE;
+                if (logfile) *logfile << "rej 11\n"; return kFALSE;
             }
         }
     }
@@ -2069,7 +2094,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
       if(fCurrentTrack->Pt()<=fMaxPtPIDITS){
         if(fPIDResponse->NumberOfSigmasITS(fCurrentTrack, AliPID::kElectron)>fITSPIDnSigmaAboveElectronLine || fPIDResponse->NumberOfSigmasITS(fCurrentTrack, AliPID::kElectron)<fITSPIDnSigmaBelowElectronLine ){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+          if (logfile) *logfile << "rej 12\n"; return kFALSE;
         }
       }
     }
@@ -2082,7 +2107,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
   if(fDoTRDPID){
     if(!fPIDResponse->IdentifiedAsElectronTRD(fCurrentTrack,fPIDTRDEfficiency)){
       if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-      return kFALSE;
+      if (logfile) *logfile << "rej 13\n"; return kFALSE;
     }
   }
   cutIndex++; //10
@@ -4869,7 +4894,7 @@ UChar_t AliConversionPhotonCuts::DeterminePhotonQualityTRD(AliAODConversionPhoto
 
   Int_t nClusterTRDneg = negTrack->GetNcls(2);
   Int_t nClusterTRDpos = posTrack->GetNcls(2);
-  
+
   if (nClusterTRDneg > 1 && nClusterTRDpos > 1){
     return 3;
   } else if (nClusterTRDneg > 1 || nClusterTRDpos > 1){
@@ -4943,16 +4968,16 @@ Bool_t AliConversionPhotonCuts::InitializeMaterialBudgetWeights(Int_t flag, TStr
     Float_t gammaConversionRadius = gamma->GetConversionRadius();
     Float_t scalePt=1.;
     Float_t nomMagField = 5.;
-    if(magField!=0) 
+    if(magField!=0)
       scalePt = nomMagField/(TMath::Abs(magField));
-    
+
     // AM:  Scale the pT for correction in case of lowB field
     //    cout<< "scalePt::"<< scalePt<< "    " <<  magField<< endl;
 
-    //AM.  the Omega correction for pT > 0.4 is flat and at high pT the statistics reduces. 
+    //AM.  the Omega correction for pT > 0.4 is flat and at high pT the statistics reduces.
     // So take the correction  at pT=0.5 if pT is > 0.7 GeV/c
-    Float_t maxPtForCor = 0.7;  
-    Float_t defaultPtForCor = 0.5;  
+    Float_t maxPtForCor = 0.7;
+    Float_t defaultPtForCor = 0.5;
     Float_t gammaPt = scalePt * gamma->Pt();
 
 

@@ -82,6 +82,7 @@ ClassImp(AliV0ReaderV1)
 
 //________________________________________________________________________
 AliV0ReaderV1::AliV0ReaderV1(const char *name) : AliAnalysisTaskSE(name),
+  fMyCount(-1),
   kAddv0sInESDFilter(kFALSE),
   fPCMv0BitField(NULL),
   fConversionCuts(NULL),
@@ -178,6 +179,7 @@ AliV0ReaderV1::AliV0ReaderV1(const char *name) : AliAnalysisTaskSE(name),
 //________________________________________________________________________
 AliV0ReaderV1::~AliV0ReaderV1()
 {
+ myfile.close();
   // default deconstructor
 
   if(fConversionGammas){
@@ -253,6 +255,8 @@ return *this;
 //________________________________________________________________________
 void AliV0ReaderV1::Init()
 {
+    myfile.open ("/Users/stephanstiefelmaier/work/projects/project_addedPi0EtaAtOnce/SFS_log.txt");
+
   // Initialize function to be called once before analysis
   if(fConversionCuts==NULL){
     if(fConversionCuts==NULL)AliError("No Conversion Cut Selection initialized");
@@ -276,10 +280,11 @@ void AliV0ReaderV1::Init()
   }
   fConversionGammas->Delete();//Reset the TClonesArray
 }
-
 //________________________________________________________________________
 void AliV0ReaderV1::UserCreateOutputObjects()
 {
+
+
   // Create AODs
 
   if(fCreateAOD){
@@ -626,6 +631,7 @@ Int_t AliV0ReaderV1::GetSumSDDSSDClusters(AliVEvent *event){
 
 //________________________________________________________________________
 void AliV0ReaderV1::UserExec(Option_t *option){
+  ++fMyCount;
   fSDDSSDClusters = -1;
 
   if (!fConversionCuts->GetPIDResponse()) fConversionCuts->InitPIDResponse();
@@ -1290,16 +1296,22 @@ Bool_t AliV0ReaderV1::GetAODConversionGammas(){
 
   // Apply Selection Cuts to Gammas and create local working copy
   Bool_t relabelingWorkedForAll = kTRUE;
+  myfile << "\nnew event " << fMyCount << " nGammas = " << fInputGammas->GetEntriesFast() << endl;
   for(Int_t i=0;i<fInputGammas->GetEntriesFast();i++){
+    myfile << i << endl;
     gamma=dynamic_cast<AliAODConversionPhoton*>(fInputGammas->At(i));
     if(!gamma){
+      myfile << "AliError returning false\n";
       AliError("Non AliAODConversionPhoton type entry in fInputGammas. This event will get rejected.");
       return kFALSE;
     }
+    myfile  << " " << gamma->GetLabel1() << " " << gamma->GetLabel2() << " " << gamma->GetTrackLabelPositive() << " " << gamma->GetTrackLabelNegative() << endl;
     if(fRelabelAODs){
       relabelingWorkedForAll &= RelabelAODPhotonCandidates(gamma);}
-    if(fConversionCuts->PhotonIsSelected(gamma,fInputEvent)){
+    myfile  << " " << gamma->GetLabel1() << " " << gamma->GetLabel2() << " " << gamma->GetTrackLabelPositive() << " " << gamma->GetTrackLabelNegative() << endl;
+    if(fConversionCuts->PhotonIsSelected(gamma,fInputEvent,  &myfile)){
       new((*fConversionGammas)[fConversionGammas->GetEntriesFast()]) AliAODConversionPhoton(*gamma);}
+    else {myfile << "AliV0ReaderV1: rejected\n";}
   }
   if(!relabelingWorkedForAll){
     AliError("For one or more photon candidate the AOD daughters could not be found. The labels of those were set to -999999 and the event will get rejected.");

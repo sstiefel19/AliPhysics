@@ -19,6 +19,9 @@
 #include "AliDalitzAODESDMC.h"
 #include "AliDalitzEventMC.h"
 
+#include <fstream>
+
+
 
 class AliESDEvent;
 class AliAODEvent;
@@ -160,7 +163,7 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
 
     // Cut Selection
     Bool_t TrackIsSelected(AliConversionPhotonBase * photon, AliVEvent  * event);
-    Bool_t PhotonIsSelected(AliConversionPhotonBase * photon, AliVEvent  * event);
+    Bool_t PhotonIsSelected(AliConversionPhotonBase * photon, AliVEvent  * event,  ofstream* logfile = nullptr);
     Bool_t PhotonIsSelectedMC(TParticle *particle,AliMCEvent *mcEvent,Bool_t checkForConvertedGamma=kTRUE);
     Bool_t PhotonIsSelectedAODMC(AliAODMCParticle *particle,TClonesArray *aodmcArray,Bool_t checkForConvertedGamma=kTRUE);
     Bool_t PhotonIsSelectedMCAODESD(AliDalitzAODESDMC *particle,AliDalitzEventMC *mcEvent,Bool_t checkForConvertedGamma) const;
@@ -194,7 +197,7 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Bool_t AcceptanceCut(TParticle *particle, TParticle * ePos,TParticle* eNeg);
     Bool_t PhiSectorCut(AliConversionPhotonBase * photon);
     //   Bool_t dEdxCuts(AliVTrack * track);
-    Bool_t dEdxCuts(AliVTrack * track, AliConversionPhotonBase * photon);
+    Bool_t dEdxCuts(AliVTrack * track, AliConversionPhotonBase * photon,  ofstream* logfile=nullptr);
     Bool_t KappaCuts(AliConversionPhotonBase * photon,AliVEvent *event);
     Bool_t ArmenterosQtCut(AliConversionPhotonBase *photon);
     Bool_t AsymmetryCut(AliConversionPhotonBase *photon,AliVEvent *event);
