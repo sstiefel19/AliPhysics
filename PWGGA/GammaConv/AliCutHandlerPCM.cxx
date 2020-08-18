@@ -10,7 +10,7 @@ ClassImp(AliCutHandlerPCM)
 AliCutHandlerPCM::AliCutHandlerPCM() :
 fMode(0),
 fNCuts(0),
-fNMaxCuts(10),
+fNMaxCuts(50),
 fValidCuts(kTRUE),
 fValidCutsEvent(kTRUE),
 fValidCutsPCM(kTRUE),
@@ -37,7 +37,7 @@ fProtonCutArray(0),
 fDeuteronCutArray(0)
 {
   fNCuts                     = 0;
-  fNMaxCuts                  = 10;
+  fNMaxCuts                  = 50;
   fEventCutArray             = new TString[fNMaxCuts];
   fPhotonCutArray            = new TString[fNMaxCuts];
   fMesonCutArray             = new TString[fNMaxCuts];
@@ -72,7 +72,7 @@ fDeuteronCutArray(0)
 AliCutHandlerPCM::AliCutHandlerPCM(Int_t nMax) :
   fMode(0),
   fNCuts(0),
-  fNMaxCuts(1),
+  fNMaxCuts(50),
   fValidCuts(kTRUE),
   fValidCutsEvent(kTRUE),
   fValidCutsPCM(kTRUE),
@@ -98,7 +98,7 @@ AliCutHandlerPCM::AliCutHandlerPCM(Int_t nMax) :
   fProtonCutArray(0),
   fDeuteronCutArray(0)
 {
-  fNCuts                     = 0;
+  fNCuts                     = 50;
   fNMaxCuts                  = nMax;
   fEventCutArray             = new TString[fNMaxCuts];
   fPhotonCutArray            = new TString[fNMaxCuts];

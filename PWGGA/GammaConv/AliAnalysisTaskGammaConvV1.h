@@ -1,6 +1,9 @@
 #ifndef ALIANLYSISTASKGAMMACONVV1_cxx
 #define ALIANLYSISTASKGAMMACONVV1_cxx
 
+//~ #include <unordered_set> // can I declare this forward?
+
+
 #include "AliAnalysisTaskSE.h"
 #include "AliESDtrack.h"
 #include "AliV0ReaderV1.h"
@@ -19,6 +22,8 @@
 #include "TMVA/Reader.h"
 #include <vector>
 #include <map>
+
+class unordered_set;
 
 class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
 
@@ -46,6 +51,7 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     void SetDoPlotVsCentrality(Bool_t flag)                       { fDoPlotVsCentrality         = flag    ;}
     void SetDoTHnSparse(Bool_t flag)                              { fDoTHnSparse                = flag    ;}
     void SetDoCentFlattening(Int_t flag)                          { fDoCentralityFlat           = flag    ;}
+    void ProcessPhotonCandidates2();
     void ProcessPhotonCandidates();
     void SetFileNameBDT(TString filename) { fFileNameBDT = filename.Data() ;}
     void InitializeBDT();
@@ -89,6 +95,10 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     Int_t GetSourceClassification(Int_t daughter, Int_t pdgCode);
 
     // Additional functions
+    Bool_t PassesAddedParticlesCriterion(AliAODConversionPhoton &thePhoton,
+                                         Int_t                   theSignalRejection,
+                                         Bool_t                 &theIsFromSelectedHeader) const;
+
     Bool_t CheckVectorForDoubleCount(vector<Int_t> &vec, Int_t tobechecked);
     void FillMultipleCountMap(map<Int_t,Int_t> &ma, Int_t tobechecked);
     void FillMultipleCountHistoAndClear(map<Int_t,Int_t> &ma, TH1F* hist);
@@ -408,11 +418,14 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     Bool_t                            fFileWasAlreadyReported;                    // to store if the current file was already marked broken
     TClonesArray*                     fAODMCTrackArray;                           //! pointer to track array
 
+    unordered_set<Int_t>              fElectronLabels;                            //! use member variable to avoid memory fragmentation
+
+
   private:
 
     AliAnalysisTaskGammaConvV1(const AliAnalysisTaskGammaConvV1&); // Prevent copy-construction
     AliAnalysisTaskGammaConvV1 &operator=(const AliAnalysisTaskGammaConvV1&); // Prevent assignment
-    ClassDef(AliAnalysisTaskGammaConvV1, 52);
+    ClassDef(AliAnalysisTaskGammaConvV1, 53);
 };
 
 #endif

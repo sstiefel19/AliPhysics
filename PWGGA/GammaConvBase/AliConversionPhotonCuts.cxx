@@ -20,6 +20,8 @@
 //---------------------------------------------
 ////////////////////////////////////////////////
 
+#include <unordered_set>
+
 #include "AliConversionPhotonCuts.h"
 
 #include "AliKFVertex.h"
@@ -1641,7 +1643,7 @@ Bool_t AliConversionPhotonCuts::AcceptanceCuts(AliConversionPhotonBase *photon) 
 
   } else if (fDoShrinkTPCAcceptance == 4){   // accept only photons in eta-phi region from PHOS-PCM (pi0 and eta meson analysis)
     Double_t photonPhi = photon->GetPhotonPhi();
-      
+
     if(photon->GetPhotonEta() > fEtaForPhiCutMin && photon->GetPhotonEta() < fEtaForPhiCutMax ){
       //cout << "A and C side, eta=" << photon->GetPhotonEta() <<  endl;
       if(!(photonPhi>fMinPhiCut  && photonPhi<fMaxPhiCut )){
@@ -4721,9 +4723,29 @@ void AliConversionPhotonCuts::FillElectonLabelArray(AliAODConversionPhoton* phot
 
   Int_t posLabel = photon->GetTrackLabelPositive();
   Int_t negLabel = photon->GetTrackLabelNegative();
+    cout << "FillElectonLabelArray: labels: " << posLabel << " " << negLabel << endl;
+
 
   fElectronLabelArray[nV0*2] = posLabel;
   fElectronLabelArray[(nV0*2)+1] = negLabel;
+}
+
+///________________________________________________________________________
+Bool_t AliConversionPhotonCuts::AllowedBySharedElectronCut(unordered_set<Int_t>& theLabels, const AliAODConversionPhoton& thePhoton){
+  // todo: check if two separate sets for electrons and positrons are safe to use. I think it is and would bring speedup
+
+  // since it is quite rare that this cut cuts, we insert the positive track before checking if the negative one can be inserted as well
+  auto lItInsWorkedPositive = theLabels.insert(thePhoton.GetTrackLabelPositive());
+  if (!lItInsWorkedPositive.second){
+    return  kFALSE;
+  }
+
+  Bool_t lInsWorkedNegative = theLabels.insert(thePhoton.GetTrackLabelNegative()).second;
+  if (!lInsWorkedNegative){
+    theLabels.erase(lItInsWorkedPositive.first);
+    return kFALSE;
+  }
+  return kTRUE;
 }
 
 ///________________________________________________________________________
@@ -4731,6 +4753,8 @@ Bool_t AliConversionPhotonCuts::RejectSharedElectronV0s(AliAODConversionPhoton* 
 
   Int_t posLabel = photon->GetTrackLabelPositive();
   Int_t negLabel = photon->GetTrackLabelNegative();
+
+  cout << "RejectSharedElectronV0s: labels: " << posLabel << " " << negLabel << endl;
 
   for(Int_t i = 0; i<nV0s*2;i++){
     if(i==nV0*2)     continue;
@@ -4743,6 +4767,52 @@ Bool_t AliConversionPhotonCuts::RejectSharedElectronV0s(AliAODConversionPhoton* 
 
   return kTRUE;
 }
+
+/* Idea: keep a list of accepted photons. On inserting a new one, check if it is too close to
+ * any of the ones already inside
+ * I expect slight changes in comparison to before: other photons will get kicked out and less will get kicked out*/
+// maybe use refs instead of pointers?
+Bool_t AliConversionPhotonCuts::AllowedByTooCloseV0sCut(TList& theNotTooClosePhotons, AliAODConversionPhoton *thePhoton){
+
+    if (fDoDoubleCountingCut && thePhoton->GetConversionRadius() < fMinRDC){
+      return kTRUE;
+    }
+
+    for (TObject* iObj : theNotTooClosePhotons){
+      AliAODConversionPhoton* iPhoton = dynamic_cast<AliAODConversionPhoton*>(iObj);
+      if (!iPhoton) continue;
+
+      if (!fDoDoubleCountingCut){
+        TVector3 v1(thePhoton->GetConversionX(),
+                    thePhoton->GetConversionY(),
+                    thePhoton->GetConversionZ());
+
+        TVector3 v2(iPhoton->GetConversionX(),
+                    iPhoton->GetConversionY(),
+                    iPhoton->GetConversionZ());
+
+        TVector3 d = v2 - v1;
+
+        if(d.Mag2() < fminV0Dist*fminV0Dist){
+          if(thePhoton->GetChi2perNDF() > iPhoton->GetChi2perNDF()){
+            return kFALSE;
+          }
+        }
+      }
+      else{
+        TVector3 v1(thePhoton->Px(),thePhoton->Py(),thePhoton->Pz());
+        TVector3 v2(iPhoton->Px(),iPhoton->Py(),iPhoton->Pz());
+        Double_t OpeningAngle=v1.Angle(v2);
+        if( OpeningAngle < fOpenAngle && TMath::Abs(thePhoton->GetConversionRadius()-iPhoton->GetConversionRadius()) < fDeltaR){
+          if(thePhoton->GetChi2perNDF() > iPhoton->GetChi2perNDF()) {
+            return kFALSE;
+          }
+        }
+      }
+    }
+  return kTRUE;
+}
+
 
 ///________________________________________________________________________
 Bool_t AliConversionPhotonCuts::RejectToCloseV0s(AliAODConversionPhoton* photon, TList *photons, Int_t nV0){
@@ -4771,7 +4841,14 @@ Bool_t AliConversionPhotonCuts::RejectToCloseV0s(AliAODConversionPhoton* photon,
       TVector3 v2(photonComp->Px(),photonComp->Py(),photonComp->Pz());
       Double_t OpeningAngle=v1.Angle(v2);
       if( OpeningAngle < fOpenAngle && TMath::Abs(photon->GetConversionRadius()-photonComp->GetConversionRadius()) < fDeltaR){
-        if(photon->GetChi2perNDF() > photonComp->GetChi2perNDF()) return kFALSE;
+        //~ cout << "RejectToCloseV0s: first cond fullfiled\n";
+        if(photon->GetChi2perNDF() > photonComp->GetChi2perNDF()) {
+            //~ cout << "second also, cutting\n";
+            return kFALSE;
+        }
+        else {
+            //~ cout << "second not, not cutting\n";
+        }
       }
     }
 
@@ -4869,7 +4946,7 @@ UChar_t AliConversionPhotonCuts::DeterminePhotonQualityTRD(AliAODConversionPhoto
 
   Int_t nClusterTRDneg = negTrack->GetNcls(2);
   Int_t nClusterTRDpos = posTrack->GetNcls(2);
-  
+
   if (nClusterTRDneg > 1 && nClusterTRDpos > 1){
     return 3;
   } else if (nClusterTRDneg > 1 || nClusterTRDpos > 1){
@@ -4943,16 +5020,16 @@ Bool_t AliConversionPhotonCuts::InitializeMaterialBudgetWeights(Int_t flag, TStr
     Float_t gammaConversionRadius = gamma->GetConversionRadius();
     Float_t scalePt=1.;
     Float_t nomMagField = 5.;
-    if(magField!=0) 
+    if(magField!=0)
       scalePt = nomMagField/(TMath::Abs(magField));
-    
+
     // AM:  Scale the pT for correction in case of lowB field
     //    cout<< "scalePt::"<< scalePt<< "    " <<  magField<< endl;
 
-    //AM.  the Omega correction for pT > 0.4 is flat and at high pT the statistics reduces. 
+    //AM.  the Omega correction for pT > 0.4 is flat and at high pT the statistics reduces.
     // So take the correction  at pT=0.5 if pT is > 0.7 GeV/c
-    Float_t maxPtForCor = 0.7;  
-    Float_t defaultPtForCor = 0.5;  
+    Float_t maxPtForCor = 0.7;
+    Float_t defaultPtForCor = 0.5;
     Float_t gammaPt = scalePt * gamma->Pt();
 
 

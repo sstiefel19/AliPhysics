@@ -19,6 +19,7 @@
 #include "AliDalitzAODESDMC.h"
 #include "AliDalitzEventMC.h"
 
+class unordered_set;
 
 class AliESDEvent;
 class AliAODEvent;
@@ -207,8 +208,12 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Bool_t CorrectedTPCClusterCut(AliConversionPhotonBase *photon, AliVEvent * event);
     Bool_t PsiPairCut(const AliConversionPhotonBase * photon) const;
     Bool_t CosinePAngleCut(const AliConversionPhotonBase * photon, AliVEvent * event) const;
+
     Bool_t RejectSharedElectronV0s(AliAODConversionPhoton* photon, Int_t nV0, Int_t nV0s);
     Bool_t RejectToCloseV0s(AliAODConversionPhoton* photon, TList *photons, Int_t nV0);
+
+    Bool_t AllowedBySharedElectronCut(unordered_set<Int_t>& theLabels, const AliAODConversionPhoton& thePhoton);
+    Bool_t AllowedByTooCloseV0sCut(TList &theNotTooClosePhotons, AliAODConversionPhoton *thePhoton);
 
     UChar_t DeterminePhotonQualityAOD(AliAODConversionPhoton*, AliVEvent*);
     UChar_t DeterminePhotonQualityTRD(AliAODConversionPhoton*, AliVEvent*);
