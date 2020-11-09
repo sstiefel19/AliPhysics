@@ -609,6 +609,8 @@ class AliConvEventCuts : public AliAnalysisCuts {
                                                  AliAODConversionPhoton &thePhoton,
                                                  Bool_t                 &theIsFromSelectedHeader); // future todo: make this const
 
+      Bool_t PhotonPassesOutOfBunchPileupRemovalCut(AliMCEvent *theMCEvent, AliAODConversionPhoton &thePhoton) const;
+
       void    LoadWeightingFlatCentralityFromFile ();
       void    LoadWeightingMultiplicityFromFile ();
       void    LoadReweightingHistosMCFromFile ();
@@ -681,6 +683,7 @@ class AliConvEventCuts : public AliAnalysisCuts {
       Int_t                       fSpecialSubTrigger;                     ///< flag
       Bool_t                      fRemovePileUp;                          ///< flag specifies if any pileup cut is applied
       Bool_t                      fRemovePileUpSPD;                       ///< flag specifies if SPD pileup cuts are applied
+      Bool_t                      fRemoveOBPphotons;
       Int_t                       fUseSphericity;                         ///< flag that specifies the sphericityCut
       Bool_t                      fUseSphericityTrue;                     ///< switch for true sphericity cuts
       Int_t                       fPastFutureRejectionLow;                ///< sets bunch crossing event rejection in past

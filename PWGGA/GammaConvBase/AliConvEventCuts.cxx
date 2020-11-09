@@ -103,6 +103,7 @@ AliConvEventCuts::AliConvEventCuts(const char *name,const char *title) :
   fSpecialSubTrigger(0),
   fRemovePileUp(kFALSE),
   fRemovePileUpSPD(kFALSE),
+  fRemoveOBPphotons(kFALSE),
   fUseSphericity(0),
   fUseSphericityTrue(kFALSE),
   fPastFutureRejectionLow(0),
@@ -244,6 +245,7 @@ AliConvEventCuts::AliConvEventCuts(const AliConvEventCuts &ref) :
   fSpecialSubTrigger(ref.fSpecialSubTrigger),
   fRemovePileUp(ref.fRemovePileUp),
   fRemovePileUpSPD(ref.fRemovePileUpSPD),
+  fRemoveOBPphotons(ref.fRemoveOBPphotons),
   fUseSphericity(ref.fUseSphericity),
   fUseSphericityTrue(ref.fUseSphericityTrue),
   fPastFutureRejectionLow(ref.fPastFutureRejectionLow),
@@ -2634,6 +2636,16 @@ Bool_t AliConvEventCuts::SetRemovePileUp(Int_t removePileUp)
     fUtils->SetBSPDCvsTCut(7.);
     break;
   case 13: // d         for Pb-Pb LHC18qr
+    fRemovePileUp = kTRUE;
+    fRemovePileUpSDDSSDTPC = kTRUE;
+
+    fFPileUpRejectSDDSSDTPC = new TF1("fFPileUpRejectSDDSSDTPC", "[0]+[1]*x+[2]*x*x", 0., 1.e+7);
+    fFPileUpRejectSDDSSDTPC->SetParameters(-3000., 0.0099,9.426e-10);
+  case 14: // e  only obp photons        for Pb-Pb LHC18qr
+    fRemoveOBPphotons = kTRUE;
+    break;
+  case 15: // f (d+e)  obp photons plus d      for Pb-Pb LHC18qr
+    fRemoveOBPphotons = kTRUE;
     fRemovePileUp = kTRUE;
     fRemovePileUpSDDSSDTPC = kTRUE;
 
@@ -6476,6 +6488,21 @@ Int_t AliConvEventCuts::IsParticleFromBGEvent(Int_t index, AliMCEvent *mcEvent, 
   return accepted;
 }
 
+//_________________________________________________________________________
+Bool_t AliConvEventCuts::PhotonPassesOutOfBunchPileupRemovalCut(AliMCEvent *theMCEvent, AliAODConversionPhoton &thePhoton) const {
+  Bool_t lResult = kFALSE;
+  if (lResult = (!fRemoveOBPphotons ||
+                !( AliAnalysisUtils::IsParticleFromOutOfBunchPileupCollision(thePhoton.GetMCLabelPositive(), theMCEvent) ||
+                   AliAnalysisUtils::IsParticleFromOutOfBunchPileupCollision(thePhoton.GetMCLabelNegative(), theMCEvent)))
+      ) {
+  } else {  cout << "SFS cutting photon because obp\n"; }
+  if (fRemoveOBPphotons) {cout << "checking obp stuff\n"; }
+  return lResult;
+}
+
+// return !A || ! (B || C)
+// return !A || (!B && !C)
+
 // returns name of header that particle belongs to
 // by looping over all headers available
 // DOES NOT YET WORK FOR EMBEDDED IN AOD
@@ -6705,6 +6732,8 @@ Int_t AliConvEventCuts::IsEventAcceptedByCut(AliConvEventCuts *ReaderCuts, AliVE
   }
 
   if(fRemovePileUp){
+    cout << "SFS fRemovePileUp = 1\n";
+
     if (   (GetDoPileUpRejectV0MTPCout() && IsPileUpV0MTPCout(event))
         || (fRemovePileUpSDDSSDTPC && IsPileUpSDDSSDTPC(event))) {
       return 13;

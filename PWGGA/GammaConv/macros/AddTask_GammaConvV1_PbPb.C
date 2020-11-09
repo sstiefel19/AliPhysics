@@ -3827,6 +3827,15 @@ void AddTask_GammaConvV1_PbPb(
     cuts.AddCutPCM("10910d13","00000000000000000000410000","0153101100000000"); //
     cuts.AddCutPCM("10910d13","00000000000000000000404000","0153101100000000"); //
     cuts.AddCutPCM("10910d13","00000000000000000000414000","0153101100000000"); //
+  } else if (trainConfig == 2502){ // to test mc pu cut
+    cuts.AddCutPCM("10930d13","0dm21109a4771c00amd1400002","0153101100000000"); // sddssd pu cut
+    cuts.AddCutPCM("10930e13","0dm21109a4771c00amd1400002","0153101100000000"); // only mc pu cut
+    cuts.AddCutPCM("10930f13","0dm21109a4771c00amd1400002","0153101100000000"); // only mc pu cut
+    cuts.AddCutPCM("10930d23","0dm21109a4771c00amd1400002","0153101100000000"); //
+    cuts.AddCutPCM("10930e23","0dm21109a4771c00amd1400002","0153101100000000"); //
+    cuts.AddCutPCM("10930f23","0dm21109a4771c00amd1400002","0153101100000000"); //
+  } else if (trainConfig == 2503){ // to test mc pu cut
+    cuts.AddCutPCM("10930e13","0dm21109a4771c00amd1400002","0153101100000000"); // only mc pu cut
 
   } else {
     Error(Form("GammaConvV1_%i",trainConfig), "wrong trainConfig variable no cuts have been specified for the configuration");
@@ -4306,7 +4315,7 @@ void AddTask_GammaConvV1_PbPb(
       analysisCuts[i]->SetDodEdxSigmaCut(kFALSE);
 
 
-    if ( trainConfig == 711  || trainConfig == 712  || trainConfig == 713  || 
+    if ( trainConfig == 711  || trainConfig == 712  || trainConfig == 713  ||
 	 trainConfig == 861  || trainConfig == 862  || trainConfig == 863 ){
       analysisCuts[i]->SetPtCutArraySize(6);
       analysisCuts[i]->SetRArraySize(7);

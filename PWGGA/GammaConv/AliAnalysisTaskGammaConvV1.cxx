@@ -2387,6 +2387,9 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
       }
     }
 
+    if (eventNotAccepted==13) cout << "SFS na 13\n";
+    if (eventQuality==13) cout << "SFS eq 13\n";
+
     if(eventNotAccepted){
       // cout << "event rejected due to wrong trigger: " <<eventNotAccepted << endl;
       fHistoNEvents[iCut]->Fill(eventNotAccepted,fWeightJetJetMC); // Check Centrality, PileUp, SDD and V0AND --> Not Accepted => eventQuality = 1
@@ -2634,6 +2637,7 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     Bool_t lIsFromSelectedHeader = kTRUE;
     if(fIsMC){
       if (!fiEventCut->PhotonPassesAddedParticlesCriterion(fMCEvent, fInputEvent, *iCandidate, lIsFromSelectedHeader)) continue;
+      if (!fiEventCut->PhotonPassesOutOfBunchPileupRemovalCut(fMCEvent, *iCandidate)) continue;
     }
 
     if(!fiPhotonCut->PhotonIsSelected(iCandidate,fInputEvent)) continue;
