@@ -959,23 +959,23 @@ void AddTask_GammaConvV1_pp(
   } else if (trainConfig == 411){
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0152103500000000"); // excluding 55-72 cm, eta 0.8
   } else if (trainConfig == 412){
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0162103500000000");  
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0r62103500000000");  
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0s62103500000000");    
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0t62103500000000");    
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0u62103500000000");    
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0162103500000000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0r62103500000000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0s62103500000000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0t62103500000000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0u62103500000000");
   } else if (trainConfig == 413){
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0162103500800000");  
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0r62103500800000");  
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0s62103500800000");    
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0t62103500800000");    
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0u62103500800000");    
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0162103500800000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0r62103500800000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0s62103500800000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0t62103500800000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0u62103500800000");
   } else if (trainConfig == 414){
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0162103500900000");  
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0r62103500900000");  
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0s62103500900000");    
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0t62103500900000");    
-    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0u62103500900000");    
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0162103500900000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0r62103500900000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0s62103500900000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0t62103500900000");
+    cuts.AddCutPCM("00010113", "00200009f9730000dge0400000", "0u62103500900000");
 
   } else if (trainConfig == 415){ // rapdity variations
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0152103500000000"); // excluding 55-72 cm, eta 0.8
@@ -1227,11 +1227,11 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dm000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g RDep Pt Cut
     cuts.AddCutPCM("00010113", "0dm000w9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g RDep Pt Cut Soft
     cuts.AddCutPCM("00010113", "0dm000w9f9730000iih0404000", "0152103520000000"); // eta < 0.8  // g RDep Pt Cut Soft (Meson Cat>=2)
-  } else if (trainConfig == 646) { // RBins RDep Pt Cut  
+  } else if (trainConfig == 646) { // RBins RDep Pt Cut
     cuts.AddCutPCM("00010113", "0dh000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0di000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0dj000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
-  } else if (trainConfig == 647) { // RBins RDep Pt Cut  
+  } else if (trainConfig == 647) { // RBins RDep Pt Cut
     cuts.AddCutPCM("00010113", "0dk000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0dl000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0dg000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
@@ -1333,7 +1333,7 @@ void AddTask_GammaConvV1_pp(
 
 
    // systematics for 13 TeV- LowB
-    // defauul cut  AM 
+    // defauul cut  AM
     //  .AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0152103500000000"); // eta < 0.8  // Test improved cuts
 
   } else if (trainConfig == 681) {   // min pT variations
@@ -1372,7 +1372,7 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dm00089f9730000iig0404000", "0152103500000000"); // Psi pair 0.30 dep
     cuts.AddCutPCM("00010113", "0dm00089227300008250404000", "0152103500000000"); // old cuts (run1)
 
-  } else if (trainConfig == 687) {   
+  } else if (trainConfig == 687) {
     cuts.AddCutPCM("00010113", "0dm00089f9730000iih0404000", "0252103500000000"); // variation BG scheme track mult
     cuts.AddCutPCM("00010113", "0dm00089f9730000iih0404000", "0r52103500000000"); // variation BG scheme track mult
     cuts.AddCutPCM("00010113", "0dm00089f9730000iih0404000", "0152107500000000"); // alpha meson 0.85
@@ -1697,7 +1697,7 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dg00009f9730000dge0474000", "0152103500000000"); // eta < 0.8  // Test improved cuts
 
 
-    //-----------------same as 7XX to be used with MBW extracted from 5TeV  
+    //-----------------same as 7XX to be used with MBW extracted from 5TeV
 
 
   } else if (trainConfig == 819) { // R 5-180 and remove r bin 55-72
@@ -1725,7 +1725,7 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0454000", "0152103500000000"); // eta < 0.8  // Test improved cuts
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0152103520000000"); // eta < 0.8  // Test improved cuts
 
-    //-----------------same as 7XX to be used with MBW extracted from 5TeV Nch  
+    //-----------------same as 7XX to be used with MBW extracted from 5TeV Nch
 
 
   } else if (trainConfig == 869) { // R 5-180 and remove r bin 55-72
@@ -1764,7 +1764,7 @@ void AddTask_GammaConvV1_pp(
 
 
     // systematics for 13 TeV
-    // defauul cut  AM 
+    // defauul cut  AM
     //  .AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0152103500000000"); // eta < 0.8  // Test improved cuts
 
   } else if (trainConfig == 881) {   // min pT variations
@@ -1803,7 +1803,7 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dm00009f9730000dgg0404000", "0152103500000000"); // Psi pair 0.30 dep
     cuts.AddCutPCM("00010113", "0dm00009227300008250404000", "0152103500000000"); // old cuts (run1)
 
-  } else if (trainConfig == 887) {   
+  } else if (trainConfig == 887) {
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0252103500000000"); // variation BG scheme track mult
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0r52103500000000"); // variation BG scheme track mult
     cuts.AddCutPCM("00010113", "0dm00009f9730000dge0404000", "0152107500000000"); // alpha meson 0.85
@@ -1887,7 +1887,7 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dm00089f9730000iih0454000", "0152103500000000"); // eta < 0.8  // Test improved cuts
     cuts.AddCutPCM("00010113", "0dm00089f9730000iih0404000", "0152103520000000"); // eta < 0.8  // Test improved cuts
 
-    //-----------------same as 6XX to be used with MBW extracted from 5TeV Nch  
+    //-----------------same as 6XX to be used with MBW extracted from 5TeV Nch
 
 
   } else if (trainConfig == 969) { // R 5-180 and remove r bin 55-72
@@ -1935,11 +1935,11 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("00010113", "0dm000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g RDep Pt Cut
     cuts.AddCutPCM("00010113", "0dm000w9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g RDep Pt Cut Soft
     cuts.AddCutPCM("00010113", "0dm000w9f9730000iih0404000", "0152103520000000"); // eta < 0.8  // g RDep Pt Cut Soft (Meson Cat>=2)
-  } else if (trainConfig == 996) { // RBins RDep Pt Cut  
+  } else if (trainConfig == 996) { // RBins RDep Pt Cut
     cuts.AddCutPCM("00010113", "0dh000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0di000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0dj000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
-  } else if (trainConfig == 997) { // RBins RDep Pt Cut  
+  } else if (trainConfig == 997) { // RBins RDep Pt Cut
     cuts.AddCutPCM("00010113", "0dk000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0dl000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
     cuts.AddCutPCM("00010113", "0dg000v9f9730000iih0404000", "0152103500000000"); // eta < 0.8  // g Pt Cut 0.075 GeV (e+- 0.040)
@@ -2203,6 +2203,25 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("0008d113", "0d20000922730000acca404000", "0152103500000000"); // PsiPair<0.15 + chi2<40 + qT<0.125pT (2D) alpha<1
     cuts.AddCutPCM("0008d113", "0d20000922730000a18a404000", "0152103500000000"); // PsiPair<0.20 + chi2<50 + qT<0.125pT (2D) alpha<1
 
+    /// ________________ Pb-Pb 5.02 TeV Stephan configs ______________________________
+    //  next two configs for testing refactoring change
+    /* varying added particles parameters, two-photon cuts disabled since these get
+     * new semantics with the refactoring change */
+  } else if (trainConfig == 2500){ // == 681
+    cuts.AddCutPCM("00010113","00000000000000000000000000","0153101100000000"); //
+    cuts.AddCutPCM("00010113","0dm21109a4771c00amd1400002","0153101100000000"); //
+    // testing elecsharing and tooclose cuts
+    /* compare histograms visually with histos from before refactoring. For
+     * elecsharing cut there is a unit test in place. The TooClose cut's implementation is
+     * is almost identical to the elecsharing ones so we trust for the one unit test
+     * for both of these cuts */
+  } else if (trainConfig == 2501){ // == 681        xy x: elecsharing y: TooCloseCut
+    cuts.AddCutPCM("00010113","00000000000000000000000000","0153101100000000"); //
+    cuts.AddCutPCM("00010113","00000000000000000000410000","0153101100000000"); //
+    cuts.AddCutPCM("00010113","00000000000000000000404000","0153101100000000"); //
+    cuts.AddCutPCM("00010113","00000000000000000000414000","0153101100000000"); //
+
+
   //*************************************************************************************************
   // 7 TeV PCM sys for omega analysis variations
   //*************************************************************************************************
@@ -2289,7 +2308,7 @@ void AddTask_GammaConvV1_pp(
     cuts.AddCutPCM("m0110113", "0dm00009f9730000dge0454000", "0152103500000000"); // 0 - 1%
     cuts.AddCutPCM("m1510113", "0dm00009f9730000dge0454000", "0152103500000000"); // 1 - 5%
     cuts.AddCutPCM("m5a10113", "0dm00009f9730000dge0454000", "0152103500000000"); // 5 - 10%
-  
+
   // ------------ 13 TeV in multiplicity classes for use without MBW ----
   } else if (trainConfig == 2751) { // Multiplicity selection, ITS + TRD photons
     cuts.AddCutPCM("n0110113", "0dm00009f9730000dge0474000", "0152103500000000"); // 0 - 10%
@@ -2469,8 +2488,8 @@ if(!cuts.AreValid()){
     if ( trainConfig == 89 ){
       analysisCuts[i]->SetSwitchToKappaInsteadOfNSigdEdxTPC(kTRUE);
     }
-    if ( trainConfig == 745  || trainConfig == 746  || trainConfig == 747  || trainConfig == 748  || trainConfig == 749  || 
-	 trainConfig == 895  || trainConfig == 896  || trainConfig == 897  || trainConfig == 898  || trainConfig == 899  || 
+    if ( trainConfig == 745  || trainConfig == 746  || trainConfig == 747  || trainConfig == 748  || trainConfig == 749  ||
+	 trainConfig == 895  || trainConfig == 896  || trainConfig == 897  || trainConfig == 898  || trainConfig == 899  ||
 	 trainConfig == 645  || trainConfig == 646  || trainConfig == 647  || trainConfig == 995  || trainConfig == 996  || trainConfig == 997     ){
       analysisCuts[i]->SetPtCutArraySize(6);
       analysisCuts[i]->SetRArraySize(7);
