@@ -2546,17 +2546,17 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
     }
 
     ProcessPhotonCandidates(); // Process this cuts gammas SFS check inside for mcpu, dont add those to fGammaCandidates
-    if(fEnableBDT) ProcessPhotonBDT(); //
-    if(fDoJetAnalysis)   ProcessJets(); //Process jets
-    if(fDoHighPtHadronAnalysis) ProcessPhotonsHighPtHadronAnalysis();
+    if(fEnableBDT) ProcessPhotonBDT(); // SFS loop over fGammaCandidates, mcpu already removed
+    if(fDoJetAnalysis)   ProcessJets(); //Process jets SFS check inside for mcpu (would have to)
+    if(fDoHighPtHadronAnalysis) ProcessPhotonsHighPtHadronAnalysis(); // SFS check inside for mcpu
 
     if(!fDoLightOutput){
-      if(fDoCentralityFlat > 0){
-	fHistoNGammaCandidates[iCut]->Fill(fGammaCandidates->GetEntries(), fWeightCentrality[iCut]*fWeightJetJetMC);
-	if( fIsMC < 2 ) fHistoNGoodESDTracksVsNGammaCandidates[iCut]->Fill(fV0Reader->GetNumberOfPrimaryTracks(),fGammaCandidates->GetEntries(), fWeightCentrality[iCut]);
+      if(fDoCentralityFlat > 0){ // SFS check inside for mcpu in fV0Reader->GetNumberOfPrimaryTracks()
+        fHistoNGammaCandidates[iCut]->Fill(fGammaCandidates->GetEntries(), fWeightCentrality[iCut]*fWeightJetJetMC);
+        if( fIsMC < 2 ) fHistoNGoodESDTracksVsNGammaCandidates[iCut]->Fill(fV0Reader->GetNumberOfPrimaryTracks(),fGammaCandidates->GetEntries(), fWeightCentrality[iCut]);
       } else {
-	fHistoNGammaCandidates[iCut]->Fill(fGammaCandidates->GetEntries(),fWeightJetJetMC);
-	if( fIsMC < 2 ) fHistoNGoodESDTracksVsNGammaCandidates[iCut]->Fill(fV0Reader->GetNumberOfPrimaryTracks(),fGammaCandidates->GetEntries());
+        fHistoNGammaCandidates[iCut]->Fill(fGammaCandidates->GetEntries(),fWeightJetJetMC);
+        if( fIsMC < 2 ) fHistoNGoodESDTracksVsNGammaCandidates[iCut]->Fill(fV0Reader->GetNumberOfPrimaryTracks(),fGammaCandidates->GetEntries());
       }
     }
 
@@ -2576,7 +2576,7 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
         }
       }
 
-      CalculatePi0Candidates(); // Combine Gammas
+      CalculatePi0Candidates(); // Combine Gammas // SFS check inside for mcpu
       if(((AliConversionMesonCuts*)fMesonCutArray->At(iCut))->DoBGCalculation()){
         if(((AliConversionMesonCuts*)fMesonCutArray->At(iCut))->BackgroundHandlerType() == 0){
           CalculateBackground(); // Combinatorial Background
@@ -4022,6 +4022,7 @@ void AliAnalysisTaskGammaConvV1::CalculatePi0Candidates(){
 		//                TClonesArray *AODMCTrackArray = dynamic_cast<TClonesArray*>(fInputEvent->FindListObject(AliAODMCParticle::StdBranchName()));
 		// if (AODMCTrackArray == NULL) continue;
                 for(Long_t iTracks = 0; iTracks < fAODMCTrackArray->GetEntriesFast(); iTracks++) {
+                  // SFS check inside for mcpu
                   AliAODMCParticle* curTrack = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(iTracks));
                   if (!curTrack) continue;
                   if (!curTrack->IsPhysicalPrimary()) continue;
