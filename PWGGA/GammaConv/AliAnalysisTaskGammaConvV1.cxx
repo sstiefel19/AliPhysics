@@ -2542,10 +2542,10 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
 
     if( fIsMC > 0 ){
       if(fInputEvent->IsA()==AliESDEvent::Class()) ProcessMCParticles();
-      if(fInputEvent->IsA()==AliAODEvent::Class()) ProcessAODMCParticles();
+      if(fInputEvent->IsA()==AliAODEvent::Class()) ProcessAODMCParticles(); // SFS check inside for mcpu
     }
 
-    ProcessPhotonCandidates(); // Process this cuts gammas
+    ProcessPhotonCandidates(); // Process this cuts gammas SFS check inside for mcpu, dont add those to fGammaCandidates
     if(fEnableBDT) ProcessPhotonBDT(); //
     if(fDoJetAnalysis)   ProcessJets(); //Process jets
     if(fDoHighPtHadronAnalysis) ProcessPhotonsHighPtHadronAnalysis();
@@ -2849,6 +2849,7 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonsHighPtHadronAnalysis()
   Double_t NTotalTracks = fInputEvent->GetNumberOfTracks();
   Int_t NTracks = 0;
   for(Int_t iTracks = 0; iTracks<NTotalTracks; iTracks++){
+    // SFS check inside for mcpu
     AliAODTrack* curTrack = (AliAODTrack*) fInputEvent->GetTrack(iTracks);
     if(curTrack->GetID()<0) continue; // Avoid double counting of tracks
     if(!curTrack->IsHybridGlobalConstrainedGlobal()) continue;
@@ -3327,6 +3328,8 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles()
   if( !((AliConvEventCuts*)fEventCutArray->At(fiCut))->IsMCTriggerSelected(fInputEvent, fMCEvent)){
     return;
   }
+  
+  AliAODMCHeader*  mcHeader = dynamic_cast<AliAODMCHeader*>(fInputEvent->FindListObject(AliAODMCHeader::StdBranchName()));
 
   if (fAODMCTrackArray){
     // Loop over all primary MC particle
@@ -3334,7 +3337,12 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles()
 
       AliAODMCParticle* particle = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(i));
       if (!particle) continue;
-
+      
+      if (AliAnalysisUtils::IsParticleFromOutOfBunchPileupCollision(i, mcHeader, fAODMCTrackArray)) {
+        std::cout << "SFS from Pileup\n";
+        continue;
+      }
+      
       Bool_t isPrimary = fiEventCut->IsConversionPrimaryAOD(fInputEvent, particle, mcProdVtxX, mcProdVtxY, mcProdVtxZ);
       if (isPrimary){
 
