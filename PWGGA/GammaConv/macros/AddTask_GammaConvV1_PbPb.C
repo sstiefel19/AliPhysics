@@ -3950,16 +3950,21 @@ void AddTask_GammaConvV1_PbPb(
     
       // == 990 2018 PCM running for direct photons
   } else if (trainConfig == 2510){ 
-    cuts.AddCutPCM("10130e03", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%
-    cuts.AddCutPCM("11310e03", "0d200009ab770c00amd0400000", "0152101500000000"); // 10-30%
+    cuts.AddCutPCM("13530003", "0d200009ab770c00amd0400000", "0152101500000000"); // 30-50%
+    cuts.AddCutPCM("15910003", "0d200009ab770c00amd0400000", "0152101500000000"); // 50-90%
     cuts.AddCutPCM("13530e03", "0d200009ab770c00amd0400000", "0152101500000000"); // 30-50%
     cuts.AddCutPCM("15910e03", "0d200009ab770c00amd0400000", "0152101500000000"); // 50-90%
+    cuts.AddCutPCM("13530f03", "0d200009ab770c00amd0400000", "0152101500000000"); // 30-50%
+    cuts.AddCutPCM("15910f03", "0d200009ab770c00amd0400000", "0152101500000000"); // 50-90%
+    cuts.AddCutPCM("13530053", "0d200009ab770c00amd0400000", "0152101500000000"); // 30-50%
+    cuts.AddCutPCM("15910053", "0d200009ab770c00amd0400000", "0152101500000000"); // 50-90%
+    
     // same with particle rejection == 2, copy a
   } else if (trainConfig == 2511){ 
-    cuts.AddCutPCM("10130e23", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%
-    cuts.AddCutPCM("11310e23", "0d200009ab770c00amd0400000", "0152101500000000"); // 10-30%
-    cuts.AddCutPCM("13530e23", "0d200009ab770c00amd0400000", "0152101500000000"); // 30-50%
-    cuts.AddCutPCM("15910e23", "0d200009ab770c00amd0400000", "0152101500000000"); // 50-90%
+    cuts.AddCutPCM("10930003", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%
+    cuts.AddCutPCM("10930023", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%
+    cuts.AddCutPCM("10930053", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%
+    cuts.AddCutPCM("10930063", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%
     // same with particle rejection == 2, copy b
   } else if (trainConfig == 2512){ 
     cuts.AddCutPCM("10130e23", "0d200009ab770c00amd0400000", "0152101500000000"); // 0-10%

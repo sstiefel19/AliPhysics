@@ -3329,7 +3329,7 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles()
     return;
   }
   
-  AliAODMCHeader*  mcHeader = dynamic_cast<AliAODMCHeader*>(fInputEvent->FindListObject(AliAODMCHeader::StdBranchName()));
+  //~ AliAODMCHeader*  mcHeader = dynamic_cast<AliAODMCHeader*>(fInputEvent->FindListObject(AliAODMCHeader::StdBranchName()));
 
   if (fAODMCTrackArray){
     // Loop over all primary MC particle
@@ -3338,10 +3338,10 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles()
       AliAODMCParticle* particle = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(i));
       if (!particle) continue;
       
-      if (AliAnalysisUtils::IsParticleFromOutOfBunchPileupCollision(i, mcHeader, fAODMCTrackArray)) {
-        std::cout << "SFS from Pileup\n";
-        continue;
-      }
+      //~ if (AliAnalysisUtils::IsParticleFromOutOfBunchPileupCollision(i, mcHeader, fAODMCTrackArray)) {
+        //~ std::cout << "SFS from Pileup\n";
+        //~ continue;
+      //~ }
       
       Bool_t isPrimary = fiEventCut->IsConversionPrimaryAOD(fInputEvent, particle, mcProdVtxX, mcProdVtxY, mcProdVtxZ);
       if (isPrimary){

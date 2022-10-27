@@ -103,6 +103,7 @@ AliConvEventCuts::AliConvEventCuts(const char *name,const char *title) :
   fSpecialTrigger(0),
   fSpecialSubTrigger(0),
   fRemovePileUp(kFALSE),
+  fRemovePileUpMc(kFALSE),
   fRemovePileUpSPD(kFALSE),
   fRemovePileUpPbPb(kFALSE),
   fUseSphericity(0),
@@ -248,6 +249,7 @@ AliConvEventCuts::AliConvEventCuts(const AliConvEventCuts &ref) :
   fSpecialTrigger(ref.fSpecialTrigger),
   fSpecialSubTrigger(ref.fSpecialSubTrigger),
   fRemovePileUp(ref.fRemovePileUp),
+  fRemovePileUpMc(ref.fRemovePileUpMc),
   fRemovePileUpSPD(ref.fRemovePileUpSPD),
   fRemovePileUpPbPb(ref.fRemovePileUpPbPb),
   fUseSphericity(ref.fUseSphericity),
@@ -2760,12 +2762,16 @@ Bool_t AliConvEventCuts::SetRemovePileUp(Int_t removePileUp)
     fRemovePileUpPbPb = kTRUE;
     fEventCuts.SetRejectTPCPileupWithITSTPCnCluCorr(kTRUE,1);
     break;
+  case 15: // f         mc pu cut
+    fRemovePileUpMc = kTRUE;
+    break;
   default:
     AliError("RemovePileUpCut not defined");
     return kFALSE;
   }
   if (fDoPileUpRejectV0MTPCout) fLabelNamePileupCutTPC = "Pileup V0M-TPCout Tracks";
   if (fFPileUpRejectSDDSSDTPC)  fLabelNamePileupCutTPC = "Pileup SDD+SSD-TPC clusters";
+  if (fRemovePileUpMc)  fLabelNamePileupCutTPC = "Pileup MC";
 
   return kTRUE;
 }
@@ -2789,6 +2795,12 @@ Bool_t AliConvEventCuts::SetRejectExtraSignalsCut(Int_t extraSignal) {
   case 4:
     fRejectExtraSignals = 4;
     break; // Special handling of Jet weights for Jets embedded in MB events
+  case 5:
+    fRejectExtraSignals = 5;
+    break; // remove particles from oob pileup
+  case 6: 
+    fRejectExtraSignals = 6;
+    break; // case 2 and 5
   default:
     AliError(Form("Extra Signal Rejection not defined %d",extraSignal));
     return kFALSE;
@@ -6586,11 +6598,13 @@ TString AliConvEventCuts::GetCutNumber(){
 }
 
 // todo: refactoring seems worthwhile. abandon static arrays in order to need only one loop over the event headers
+// what it does: fills fNotRejectedStart[] and fNotRejectedEnd[] such that it is known which particles are to be rejected (based on their indices)
 //________________________________________________________________________
 void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderList, AliVEvent *event){
 
   if ( rejection==0 || // No rejection
-      (fPeriodEnum==kLHC20g10 && (rejection==1 || rejection==3))){
+       rejection==5 || // reject particles from mc pileup
+     (fPeriodEnum==kLHC20g10 && (rejection==1 || rejection==3))){
     // LHC20g10 contains added particles only. See comment from Stiefelmaier in https://alice.its.cern.ch/jira/browse/ALIROOT-8519
     return;
   }
@@ -6645,11 +6659,12 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
 
     // first loop over headers in event and accepted headers from HeaderList.
     // purpose: find out number of headers that are both in the event and on the HeaderList (fnHeaders)
-    if(rejection == 2 || rejection == 4){ // TList of Headers Names
+    if(rejection == 2 || rejection == 4 || rejection == 6){ // TList of Headers Names
       for(Int_t i = 0; i<genHeaders->GetEntries();i++){
         gh                    = (AliGenEventHeader*)genHeaders->At(i);
         TString GeneratorName = gh->GetName();
         lastindexA            = lastindexA + gh->NProduced();
+        //~ cout << "SFS name and prod particles: " << GeneratorName.Data() << " " << gh->NProduced() << endl;
         if (fDebugLevel > 0 ) cout << i << "\t" << GeneratorName.Data() << endl;
         for(Int_t j = 0; j<HeaderList->GetEntries();j++){
           TString GeneratorInList   = ((TObjString*)HeaderList->At(j))->GetString();
@@ -6752,7 +6767,7 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
       return;
     }
 
-    // only get here for rejection==2,4: second loop over event headers and accepted headers from HeaderList.
+    // only get here for rejection==2,4,6: second loop over event headers and accepted headers from HeaderList.
     // purpose: feed indeces corresponding to tracks from accepted headers into fNotRejectedStart and fNotRejectedEnd
     Int_t firstindex        = 0;
     Int_t lastindex         =  -1;
@@ -6915,12 +6930,12 @@ Bool_t AliConvEventCuts::PhotonPassesAddedParticlesCriterion(AliMCEvent         
     Int_t lIsNegFromMBHeader = IsParticleFromBGEvent(thePhoton.GetMCLabelNegative(), theMCEvent, theInputEvent);
     theIsFromSelectedHeader = bothFromFirstHeader(lIsNegFromMBHeader, lIsPosFromMBHeader);
   }
-  else{ // 1,2,4
+  else{ // 1,2,4,5,6
     if (!lIsPosFromMBHeader) return kFALSE;
     Int_t lIsNegFromMBHeader = IsParticleFromBGEvent(thePhoton.GetMCLabelNegative(), theMCEvent, theInputEvent);
     if (!lIsNegFromMBHeader) return kFALSE;
 
-    if (fRejectExtraSignals!=2) {
+    if (fRejectExtraSignals==1 || fRejectExtraSignals==4) {
       theIsFromSelectedHeader = bothFromFirstHeader(lIsNegFromMBHeader, lIsPosFromMBHeader);
     }
   }
@@ -6953,6 +6968,20 @@ Int_t AliConvEventCuts::IsParticleFromBGEvent(Int_t index, AliMCEvent *mcEvent, 
   else if(InputEvent->IsA()==AliAODEvent::Class()){
     if(!fAODMCTrackArray) fAODMCTrackArray = dynamic_cast<TClonesArray*>(InputEvent->FindListObject(AliAODMCParticle::StdBranchName()));
     if (fAODMCTrackArray){
+      
+      if(fRejectExtraSignals==5 || fRejectExtraSignals==6){
+        // add if (!mcHeader etc)
+        AliAODMCHeader*  mcHeader = dynamic_cast<AliAODMCHeader*>(InputEvent->FindListObject(AliAODMCHeader::StdBranchName()));
+
+        if (AliAnalysisUtils::IsParticleFromOutOfBunchPileupCollision(index, mcHeader, fAODMCTrackArray)) {
+          //~ std::cout << "SFS from Pileup in evcuts " << index << std::endl;
+          return 0;
+        }
+        
+        if(fRejectExtraSignals==5) return 1;
+      }
+      
+      
       AliAODMCParticle *aodMCParticle = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(index));
       if(!aodMCParticle) return 0; // no particle
 
@@ -7213,6 +7242,15 @@ Int_t AliConvEventCuts::IsEventAcceptedByCut(AliConvEventCuts *ReaderCuts, AliVE
     if(!acceptEventCuts){
       return 13;
     }
+  }
+  if(fRemovePileUpMc){
+    
+    AliAODMCHeader *mcHeader = (AliAODMCHeader *)event->GetList()->FindObject(AliAODMCHeader::StdBranchName());
+
+    if(AliAnalysisUtils::IsPileupInGeneratedEvent(mcHeader,"Hijing")){
+    
+      return 13;
+     }
   }
 
   if(fUseSphericity > 0){

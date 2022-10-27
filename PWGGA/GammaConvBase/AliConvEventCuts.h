@@ -695,7 +695,8 @@ class AliConvEventCuts : public AliAnalysisCuts {
       Int_t                       fMultiplicityMethod;                    ///< selected multiplicity method
       Int_t                       fSpecialTrigger;                        ///< flag
       Int_t                       fSpecialSubTrigger;                     ///< flag
-      Bool_t                      fRemovePileUp;                          ///< flag specifies if any pileup cut is applied
+      Bool_t                      fRemovePileUp;
+      Bool_t                      fRemovePileUpMc;                          ///< flag specifies if any pileup cut is applied
       Bool_t                      fRemovePileUpSPD;                       ///< flag specifies if SPD pileup cuts are applied
       Bool_t                      fRemovePileUpPbPb;                      ///< flag specifies if any pileup cut is applied
       Int_t                       fUseSphericity;                         ///< flag that specifies the sphericityCut
