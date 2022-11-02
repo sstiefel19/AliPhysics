@@ -2366,6 +2366,8 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
   // Called for each event
   //
   fInputEvent = InputEvent();
+  
+  cout << "test";
 
   // Set MC events
   if(fIsMC>0) fMCEvent = MCEvent();
