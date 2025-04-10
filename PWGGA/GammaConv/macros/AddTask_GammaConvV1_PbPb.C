@@ -4170,13 +4170,8 @@ void AddTask_GammaConvV1_PbPb(
     cuts.AddCutPCM("13530023", "00200008100000001100400000", "0152103500000000"); // 30-50%
     cuts.AddCutPCM("15910023", "00200008100000001100400000", "0152103500000000"); // 50-90%
 
-
-    
-    
-
 ///////////////// 993 inspired open cut + alpha-meson cut //////////////////////////////////
     
-
     // data 
     } else if (trainConfig == 3100){ //____________________-___
         cuts.AddCutPCM("10130e03", "0d200008100000001100400000", "0152101500000000"); // 0-10%
@@ -4220,8 +4215,47 @@ void AddTask_GammaConvV1_PbPb(
     } else if (trainConfig == 3108){ //____________________-___
         cuts.AddCutPCM("13530023", "0d200008100000001100400000", "0152101500000000"); // 30-50%
     
-    
+// ***** 993 LHC18qr_pass std. gamma cut two full copies for more testing of pt-weights ******
+// first complete block
+    } else if (trainConfig == 4093){ //____________________-___
+        cuts.AddCutPCM("10130e03", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530e03", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+    } else if (trainConfig == 4094){ //____________________-___
+        cuts.AddCutPCM("10130053", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530053", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+        // 993 for AddSigMC copy a)
+    } else if (trainConfig == 4095){ //____________________-___
+        cuts.AddCutPCM("10130023", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530023", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+        // 993 for AddSigMC copy b)
+    } else if (trainConfig == 4096){ //____________________-___
+        cuts.AddCutPCM("10130023", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530023", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+        // 993 for AddSigMC copy c)
+    } else if (trainConfig == 4097){ //____________________-___
+        cuts.AddCutPCM("10130023", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530023", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
 
+        // second complete block
+    } else if (trainConfig == 4193){ //____________________-___
+        cuts.AddCutPCM("10130e03", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530e03", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+    } else if (trainConfig == 4194){ //____________________-___
+        cuts.AddCutPCM("10130053", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530053", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+        // 993 for AddSigMC copy a)
+    } else if (trainConfig == 4195){ //____________________-___
+        cuts.AddCutPCM("10130023", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530023", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+        // 993 for AddSigMC copy b)
+    } else if (trainConfig == 4196){ //____________________-___
+        cuts.AddCutPCM("10130023", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530023", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+        // 993 for AddSigMC copy c)
+    } else if (trainConfig == 4197){ //____________________-___
+        cuts.AddCutPCM("10130023", "0d200009ab770c00amd0404000", "0152101500000000"); // 0-10%
+        cuts.AddCutPCM("13530023", "0d200009ab770c00amd0404000", "0152101500000000"); // 30-50%
+    
 // *****************************************************************************************
     // systematics for LHC18qr_pass3 993 (which is 936 in 2018 cent classes and event cuts)
     // 50xy = data, 51xy = mc mb, 52xy = mc added signal 1, 53xy = mc added signal 2
@@ -4643,7 +4677,6 @@ void AddTask_GammaConvV1_PbPb(
       cuts.AddCutPCM("13530023", "0dm00009a8770c00amd0404000", "0152101500000000"); // exclude spec. R region 'm', && TPC pi (2, 1)
       cuts.AddCutPCM("13530023", "0d200009ab770d00amd0404000", "0152101500000000"); // TOF e (-4,4) (-4,4) for 0.4GeV < p < 2.0GeV ('d')  
       cuts.AddCutPCM("13530023", "0d200009ab770b00amd0404000", "0152101500000000"); // TOF e (-4,4) (-4,4) for 0.4GeV < p ('b')  
-
   } else {
     Error(Form("GammaConvV1_%i",trainConfig), "wrong trainConfig variable no cuts have been specified for the configuration");
     return;
