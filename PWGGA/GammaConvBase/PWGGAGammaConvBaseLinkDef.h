@@ -42,4 +42,8 @@
 #pragma link C++ class AliDalitzData+;
 #pragma link C++ class AliCaloSigmaCuts+;
 
+#pragma link C++ class TH1_ExponentialInterpolation+ ;
+#pragma link C++ class TH1_ExponentialInterpolation_static+ ;
+#pragma link C++ class utils_TH1+ ;
+
 #endif
