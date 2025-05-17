@@ -295,7 +295,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
            lTF1_local_good ? "yes" : "no");
 
     // (re)insert if necessary
-    if (isInRangeOfHisto && !lTF1_local_good){   
+    if (isInRangeOfHisto){   
         
         // this creates a new TF1 on HEAP!     
         lTF1_local_good = GetNewLocalExponentialTF1(fTH1, 
@@ -318,6 +318,12 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
                         id.data());
         }            
     } // done checking all conditions and pointers
+    
+    printf("dumping lTF1_local_good:\n");
+    if (lTF1_local_good){
+        lTF1_local_good->Dump();
+    }
+    printf("done dumping lTF1_local_good:\n");
     
     lResultValue = lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
     if (!lResultValue){
