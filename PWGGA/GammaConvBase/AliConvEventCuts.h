@@ -907,7 +907,7 @@ class AliConvEventCuts : public AliAnalysisCuts {
       TH2D                          *fHistoRelDiffNewOldMesonWeights_Pi0;
       TH2D                          *fHistoRelDiffNewOldMesonWeights_Eta;
 
-      utils_TH1                     *fUtils_TH1;                          ///< needed for the GlobalPieceWiseExponentialInterpolation 
+      utils_TH1                     fUtils_TH1;                          ///< needed for the GlobalPieceWiseExponentialInterpolation 
       // keep this one last
       Int_t                          fDebugLevel;                            ///< debug level for interactive debugging
   private:

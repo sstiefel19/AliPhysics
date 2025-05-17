@@ -228,7 +228,7 @@ AliConvEventCuts::AliConvEventCuts(const char *name,const char *title) :
   fMapPtWeightsIsFilledAndSane(kFALSE),
   fHistoRelDiffNewOldMesonWeights_Pi0(nullptr),
   fHistoRelDiffNewOldMesonWeights_Eta(nullptr),
-  fUtils_TH1{new utils_TH1("AliConvEventCuts_fUtils_TH1")},  // create on heap so maybe the longer lifetime helps todo: <- check
+  fUtils_TH1{"AliConvEventCuts_fUtils_TH1"},
   fDebugLevel(0)
 {
   for(Int_t jj=0;jj<kNCuts;jj++){fCuts[jj]=0;}
@@ -414,10 +414,6 @@ AliConvEventCuts::~AliConvEventCuts() {
   if(fAODMCTrackArray){
     delete[] fAODMCTrackArray;
     fAODMCTrackArray = 0x0;
-  }
-  if (fUtils_TH1){
-    delete fUtils_TH1;
-    fUtils_TH1 = nullptr;
   }
 
 }
@@ -1135,8 +1131,8 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
     lDataTF1 = lIsVar ?  multiplyTF1ByX(*theDataTF1_inv) : theDataTF1_inv;
     lMCTH1   = lIsVar ? &multiplyTH1ByBinCenters(*theMCTH1_inv) : theMCTH1_inv;
     
-    TF1 *lMCTF1_exp_inter = (lMCTH1 && fUtils_TH1)
-      ?  fUtils_TH1->utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(
+    TF1 *lMCTF1_exp_inter = lMCTH1
+      ?  fUtils_TH1.utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(
             Form("%s_exp_inter", lMCTH1->GetName()), 
             *lMCTH1,
             lIsVar /*theIntegrate*/,    // integration is only correct if the spectrum is in variant form

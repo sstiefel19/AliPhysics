@@ -146,8 +146,8 @@ class utils_TH1
                 bool                                 fUseXtimesExp; /* whether      false: th1.BinContent(i) -> th1.BinContents(i) * th1.BinCenter(i)      true: f(x) = exp([0] + [1]*x) -> x * f(x) */
         
                 // holds for every bin in fTH1 a TF1 pointer to the local interpolations
-                std::vector<TF1*>                    fVector_tf1_local; 
-                TF1                                 *fTF1_global; // can only live as long as this instance of
+                std::vector<TF1>                    fVector_tf1_local; // lifetime must exceed lifetime of fTF1_global
+                TF1                                *fTF1_global; 
 
     }; // end class utils_TH1::TH1_ExponentialInterpolation
 
