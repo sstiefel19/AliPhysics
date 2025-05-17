@@ -81,6 +81,8 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
 
     TAxis const &lAxis = *theTH1.GetXaxis();    
     int const iLeftBin = lAxis.FindBin(theX);
+
+    iLeft = std::max(iLeft, 1)
     int const iRightBin = iLeftBin+1;
 
     printf("found bins: iLeftBin = %d, iRightBin = %d\n",
@@ -103,14 +105,7 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
         ?   xmax
         :   cr;
     
-    // std::pair<double, double> lRange_centerToCenter( 
-    //     { lAxis.GetBinCenter(iLeftBin), lAxis.GetBinCenter(iRightBin) });
-    printf("line100\n");
-    // std::pair<double, double> const &lFunctionDefineRange = theIntegrate 
-    //     ?   lRange_edgeToEdge
-    //     :   lRange_centerToCenter;
-    
-    printf("line105\n");
+    printf("line106\n");
 
     std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d", 
                                    theTH1.GetName(),
@@ -133,6 +128,11 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
                                 theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
                            rangeMin,
                            rangeMax);
+    printf("line129 lResult = %p\n", lResult);    
+    if (!lResult){
+        printf("no lResult, returning nullptr.\n");
+        return nullptr;
+    }                  
 
     std::string lFitOptions("QFMN0"); // Q = minimum printing
     if (theIntegrate){
