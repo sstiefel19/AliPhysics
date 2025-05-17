@@ -82,6 +82,9 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
     int const iLeftBin = lAxis.FindBin(theX);
     int const iRightBin = iLeftBin+1;
 
+    printf("found bins: iLeftBin = %d, iRightBin = %d\n",
+           iLeftBin, iRightBin);
+
     std::pair<double, double> lRange_edgeToEdge( 
         { lAxis.GetBinLowEdge(iLeftBin), lAxis.GetBinUpEdge(iRightBin) });    
 
