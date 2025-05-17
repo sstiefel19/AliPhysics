@@ -61,7 +61,7 @@ TF1 *utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(std::string const
             id.data(),
             fTH1_ExponentialInterpolation_static_instance_ptr);
     
-    TF1 *lResult = fTH1_ExponentialInterpolation_static_instance_ptr->GetNewLocalExponentialTF1(
+    TF1 *lResult = fTH1_ExponentialInterpolation_static_instance_ptr->GetInterpolationTF1(
         theTH1, 
         theIntegrate, 
         theUseXtimesExp);  
