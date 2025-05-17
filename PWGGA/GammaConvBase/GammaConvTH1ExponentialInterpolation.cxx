@@ -59,91 +59,142 @@ utils_TH1::TH1_ExponentialInterpolation::~TH1_ExponentialInterpolation()
     printf("INFO: utils_TH1::TH1_ExponentialInterpolation::~TH1_ExponentialInterpolation(): id: %s\n"
     "\tDestructor called.\n",
     id.data());
-
-    auto deletePointer = [](TObject *p){ if (p){ delete p; p = nullptr; } };
     
-    deletePointer(fTF1_global);
-
-    if (fVector_tf1_local.size()){
-        for (auto *p : fVector_tf1_local){
-            deletePointer(p);
-        }
+    if (fTF1_global){
+        delete fTF1_global;
+        fTF1_global = nullptr;
     }
 }
 
 //_________________________________________________________________________________________________
-TF1 *utils_TH1::TH1_ExponentialInterpolation::GetLocalExponentialTF1(TH1    &theTH1, 
-                                                                     double  theX, 
-                                                                     bool    theIntegrate, 
-                                                                     bool    theUseXtimesExp)
+TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &theTH1, 
+                                                                        double  theX, 
+                                                                        bool    theIntegrate, 
+                                                                        bool    theUseXtimesExp)
 {
-    TAxis const &lAxis = *theTH1.GetXaxis();    
-    auto findFunctionI = [&](){
-        int histoBinI = lAxis.FindBin(theX);
-        return (theX >= lAxis.GetBinCenter(histoBinI)) 
-        ? histoBinI 
-        : std::max(histoBinI-1, 0);
-    };
-    int const iLeftBin = findFunctionI();
-    int const iRightBin = iLeftBin+1;
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(): id: %s\n"
+            "\tCalled with theX = %f, theIntegrate = %d, theUseXtimesExp = %d\n",
+           id.data(),
+           theX,
+           theIntegrate,
+           theUseXtimesExp);
 
-    std::pair<double, double> lRange_edgeToEdge( 
-        { lAxis.GetBinLowEdge(iLeftBin), lAxis.GetBinUpEdge(iRightBin) });    
+    TAxis const &lAxis = *theTH1.GetXaxis();   
 
-    std::pair<double, double> lRange_centerToCenter( 
-        { lAxis.GetBinCenter(iLeftBin), lAxis.GetBinCenter(iRightBin) });
+    // we cant fit the histogram in the 0th bin
+    int const iLeftBinMin = 1;
+    int const iRightBinMax = lAxis.GetNbins();
 
-    std::pair<double, double> const &lFunctionDefineRange = theIntegrate 
-        ?   lRange_edgeToEdge
-        :   lRange_centerToCenter;
+    int const iBinHisto = lAxis.FindBin(theX);
+    bool isEdgeLeft  = (iBinHisto == iLeftBinMin);
+    bool isEdgeRight = (iBinHisto == iRightBinMax);
 
-    std::string lFunctionName(Form("%s_localExponential%s%s", 
-                                   theTH1.GetName(), 
+    int const iLeftBin = isEdgeRight
+        ?    iRightBinMax - 1                  // upper edge case
+        :    std::max(iBinHisto, iLeftBinMin); // normal case
+    
+    int const iRightBin = iLeftBin + 1;
+    
+    printf("found bins: iBinHisto = %d, iLeftBin = %d, iRightBin = %d\n",
+           iBinHisto, iLeftBin, iRightBin);
+    
+    double xmin = lAxis.GetBinLowEdge(iLeftBin);
+    double xmax = lAxis.GetBinUpEdge(iRightBin);
+ 
+    printf("line102\n");
+
+    std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d-%d%s", 
+                                   theTH1.GetName(),
                                    theUseXtimesExp 
                                        ?    "_*x" 
                                        :    "",
                                    theIntegrate 
                                        ?    "fitted_w/_int_cond" 
-                                       :    "calc_analyt_through_bin_centers"));
+                                       :    "calc_analyt_through_bin_centers",
+                                   iBinHisto, 
+                                   iLeftBin,
+                                   iRightBin,
+                                   isEdgeLeft 
+                                     ?  "_el"
+                                     : isEdgeRight
+                                       ? "_er"
+                                       : ""));
 
+    printf("Will create new TF1 with name = %s in range [ %f - %f |\n",
+           lFunctionName.data(),
+           xmin,
+           xmax);
+    
     TF1 *lResult = new TF1(lFunctionName.data(),
                            Form("%sexpo(0)", 
-                           theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
-                           lFunctionDefineRange.first,
-                           lFunctionDefineRange.second);
+                                theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
+                           xmin,
+                           xmax);
+                           
+    printf("line134 lResult = %p\n", lResult);    
+    if (!lResult){
+        printf("no lResult, returning nullptr.\n");
+        return nullptr;
+    }                  
 
     std::string lFitOptions("QFMN0"); // Q = minimum printing
     if (theIntegrate){
         theTH1.Fit(lResult, 
                     lFitOptions.append(theIntegrate ? "I" : "").data(), 
                     "" /* global fit options I believe */, 
-                    lFunctionDefineRange.first, 
-                    lFunctionDefineRange.second);
-        lResult->SetRange(lRange_centerToCenter.first, lRange_centerToCenter.second);
+                    xmin, 
+                    xmax);
+        lResult->SetRange(xmin, xmax);
     } 
      // dont integrate, use bin contents
     else { // dont integrate, use bin contents
-        double x1 = lRange_centerToCenter.first;
-        double x2 = lRange_centerToCenter.second;
+        double centerLeft  = lAxis.GetBinCenter(iLeftBin);
+        double centerRight = lAxis.GetBinCenter(iRightBin);
+        double x1 = centerLeft;
+        double x2 = centerRight;
         double y1 = theTH1.GetBinContent(iLeftBin);
         double y2 = theTH1.GetBinContent(iRightBin);
 
-        if (!(y1&&y2)) { 
-            return nullptr;
+        if (!(y1&&y2)) {
+            printf("INFO: utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(): instance %s\n"
+                    "\tOne of y1 = %f and y2 %f are zero. Bin numbers: [ %d | %d |\n"
+                    "\tCan only return zero function.\n",
+                    id.data(),
+                    y1,
+                    y2,
+                    iLeftBin,
+                    iRightBin);
+
+            lResult = new TF1(Form("%s_zero_function_bins_%d-%d",
+                                    id.data(),
+                                    iLeftBin,
+                                    iRightBin),
+                              "0",
+                              xmin,
+                              iRightBin);
+        // success
+        } else {
+            printf("INFO: utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(): instance %s\n"
+                    "\t using bins [ %d | %d |   with centers [ %f | %f |  and contents: [ %f | %f |. \n", 
+                id.data(),
+                iLeftBin, 
+                iRightBin,
+                x1, 
+                x2,
+                y1,
+                y2);
+            double b = TMath::Log(y2/y1) / (x2-x1);
+            double a = TMath::Log(y1) - b*x1;
+            lResult->SetParameters(a,b);
+            lResult->SetRange(isEdgeLeft 
+                                  ?    lAxis.GetBinLowEdge(iLeftBin) 
+                                  :    lAxis.GetBinCenter(iLeftBin),
+                              isEdgeRight 
+                                  ?    lAxis.GetBinUpEdge(iRightBin)
+                                  :    lAxis.GetBinCenter(iRightBin));
         }
-        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::GetLocalExponentialTF1(): instance %s\n"
-                "\t using bins [ %d | %d |   with centers [ %f | %f |  and contents: [ %f | %f | \n", 
-               id.data(),
-               iLeftBin, 
-               iRightBin,
-               x1, 
-               x2,
-               y1,
-               y2);
-        double b = TMath::Log(y2/y1) / (x2-x1);
-        double a = TMath::Log(y1) - b*x1;
-        lResult->SetParameters(a,b);
     } // end don't integrate, use bin contents
+    printf("SFS line 192: lResult = %p\n", lResult);
     return lResult;
 }
 
@@ -154,7 +205,7 @@ double utils_TH1::TH1_ExponentialInterpolation::EvaluateLocalExponentialInterpol
     bool    theIntegrate /*= false*/,
     bool    theUseXtimesExp /*= false*/)
 {
-    TF1* f = GetLocalExponentialTF1(theTH1, theX, theIntegrate, theUseXtimesExp);
+    TF1 *f = GetNewLocalExponentialTF1(theTH1, theX, theIntegrate, theUseXtimesExp);
     return f ? f->Eval(theX) : 0.;
 }
 
@@ -173,84 +224,61 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
            fUseXtimesExp);
 
     size_t nBinsX = theTH1.GetNbinsX();
+    size_t nBinsXplus2 = nBinsX + 2;
 
-    // enter 0 function for underflow bin
-    fVector_tf1_local.push_back(new TF1("TF1bin0", 
-                                        "0",  
-                                        theTH1.GetXaxis()->GetBinLowEdge(1) 
-                                            - theTH1.GetXaxis()->GetBinWidth(1),
-                                        theTH1.GetXaxis()->GetBinLowEdge(1),
-                                        0)
-                                );
-    
-    size_t lNumberOfInsertions = 0;
-    for (size_t iBin = 1; iBin <= nBinsX; ++iBin){
-        double x = theTH1.GetBinCenter(iBin);
-        theGlobalTF1.Eval(x); // this creates one local function per bin and stores it in fVector
-
-        // TF1 *lTF1_candidate = fVector_tf1_local[iBin];
-        TF1 *lTF1_candidate = (iBin <= fVector_tf1_local.size()) 
-            ?   fVector_tf1_local[iBin]
-            :   utils_TH1::TH1_ExponentialInterpolation::GetLocalExponentialTF1(theTH1, x, fIntegrate, fUseXtimesExp);
-
-        TF1 *lTF1_local_good = (lTF1_candidate && TF1GoodForX(*lTF1_candidate, x))
-            ?   lTF1_candidate
-            :   static_cast<TF1*>(nullptr);
-        
-        if (lTF1_local_good){
-            // all good
-            ++lNumberOfInsertions;
-        } else {    
-            // try here explicitly
-            printf("WARNING: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(): instance id: %s\n"
-                    "\tFor some reason the automatic initialization through Eval() did not work!\n",
-                    id.data());
-            lTF1_local_good = GetLocalExponentialTF1(fTH1, 
-                                                     x,
-                                                     fIntegrate,
-                                                     fUseXtimesExp);
-            if (!lTF1_local_good){
-                printf("WARNING: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(): instance id: %s\n"
-                       "\tThrough GetLocalExponentialTF1() did return nullptr. Returning nullptr.\n",
-                       id.data());
-                return false;
-            }
-
-            printf("INFO: TF1 *utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject():\n"
-                    "\tiBin: %zu x = %f: Added %s to map.\n",
-                   iBin, 
-                   x, 
-                   lTF1_local_good->GetName());
-
-            fVector_tf1_local[iBin] = lTF1_local_good;
-            ++lNumberOfInsertions;                        
-        }
+    bool isAlreadyFullyInitialized = fVector_tf1_local.size() == nBinsXplus2;
+    if (isAlreadyFullyInitialized){
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
+                "\tNo need for calling initGlobalFunctionObject() for this global TF1. It is already full initialized. Returning early.\n",
+               id.data());
+        return true;
     }
 
-    // enter 0 function for overflow bin
-    std::string lName(Form("TF1bin%zu", nBinsX+1));
-    fVector_tf1_local.push_back(new TF1(lName.data(), 
-                                        "0", 
-                                        theTH1.GetXaxis()->GetBinLowEdge(1) 
-                                            - theTH1.GetXaxis()->GetBinWidth(1),
-                                        theTH1.GetXaxis()->GetBinLowEdge(1),
-                                        0)
-                                );
+    fVector_tf1_local.clear();
 
+    // // enter 0 function for underflow bin
+    // fVector_tf1_local.emplace_back(   
+    //     "TF1bin0", 
+    //     "0",  
+    //     theTH1.GetXaxis()->GetBinLowEdge(1) 
+    //         - theTH1.GetXaxis()->GetBinWidth(1),
+    //     theTH1.GetXaxis()->GetBinLowEdge(1),
+    //     0
+    // );
+    
+    for (size_t iBin = 0; iBin <= nBinsX + 1; ++iBin){
+        double x = theTH1.GetBinCenter(iBin);
 
-    fTF1_global = &theGlobalTF1;
-    bool isFullyInitializedNow = lNumberOfInsertions == nBinsX;
+        // this creates one local function per bin and stores it in fVector
+        double y = theGlobalTF1.Eval(x);
+        printf("SFS line 226 case all good: iBin = %zu, x = %f, y = %f, size vector = %zu\n",
+               iBin,
+               x, 
+               y,
+               fVector_tf1_local.size());
+    }
+    printf("SFS line 232 case all good: size vector = %zu\n",
+           fVector_tf1_local.size());
 
-    bool wasAlreadyFullyInitialized = !lNumberOfInsertions;
-    if (lNumberOfInsertions){
+    // // enter 0 function for overflow bin
+    // std::string lName(Form("TF1bin%zu", nBinsX+1));
+    // fVector_tf1_local.emplace_back(lName.data(), 
+    //                                "0", 
+    //                                theTH1.GetXaxis()->GetBinLowEdge(1) 
+    //                                    - theTH1.GetXaxis()->GetBinWidth(1),
+    //                                theTH1.GetXaxis()->GetBinLowEdge(1),
+    //                                0);
+
+    // printf("SFS line 249 case all good: size vector = %zu\n",
+    //        fVector_tf1_local.size());
+
+    bool isFullyInitializedNow = fVector_tf1_local.size() == nBinsXplus2;
+    if (isFullyInitializedNow){
         printf("utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
-                 "\tInserted new local TF1s for %zu out of %zu bins. Instance was %s initialized.\n",
-               id.data(), 
-               lNumberOfInsertions, 
-               nBinsX, 
-               wasAlreadyFullyInitialized
-                   ?   "already fully"
-                   :   "not");   
+               "\tfVector_tf1_local.size() = %zu, theTH1.GetNbinsX() = %zu\n",
+        id.data(), 
+        fVector_tf1_local.size(), 
+        nBinsX);   
     }
     return isFullyInitializedNow;
 }
@@ -258,53 +286,120 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
 //_________________________________________________________________________________________________
 double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 {
+    double lResultValue = 0.;
+    TF1 *lTF1_local_good = nullptr;
+    bool wasObtainedFromCache = false;
+    bool shouldInsertInside = false ;
+
     // check if there is already a local interpol for this x
-    size_t const lBin = static_cast<size_t>(fTH1.FindBin(*x));
+    int const lBinHisto = fTH1.FindBin(*x);
+
+    // not sure if this explicit cast is necessary
+    int const lCurrentVectorSize = static_cast<int>(fVector_tf1_local.size());
 
     // return 0 here if outside the range bins 1..nBinsX of fTH1
-    if (!lBin || (lBin == (fTH1.GetNbinsX()+1))){
+    bool isUnderOverFlow = !lBinHisto || (lBinHisto == (fTH1.GetNbinsX() + 1)); 
+    if (isUnderOverFlow){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
-                "\tcalled for x = %f, the %sflow bin of %s. Returning 0.\n",
+                "\tcalled for x = %f, the %sflow bin of %s. This will later return 0.\n",
                id.data(),
                *x,
-               lBin ? "over" : "under",
+               lBinHisto ? "over" : "under",
                fTH1.GetName());
-        return 0;
+    }
+    
+    bool canInsertInside = lBinHisto < lCurrentVectorSize;
+    bool isBinAlreadyInVector = !shouldInsertInside &&  lBinHisto < lCurrentVectorSize-1;
+    bool canInsertAtBack = !isBinAlreadyInVector && (lCurrentVectorSize == lBinHisto);
+    bool shouldProceed = isBinAlreadyInVector || canInsertInside || canInsertAtBack;
+    
+    // this means we can't even insert a zero function
+    if (!shouldProceed){
+        // uncomment for per Evaluate call print statement.
+        /*
+            printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                    "\tcalled for x = %f, lBinHisto = %d\n. This is outside the histo's %s range: [ %f | .. | %f |.\n"
+                    "\tThere is no reason to perceed, we will return %f already here.\n",
+                id.data(),
+                *x,
+                lBinHisto,
+                fTH1.GetName(),
+                fTH1.GetXaxis()->GetXmin(),
+                fTH1.GetXaxis()->GetXmax(),
+                lResultValue);
+        */
+        return lResultValue;
     }
 
-    // try to get local tf1 from vector
-    auto  *lTF1_local_good = (lBin <= fVector_tf1_local.size()) 
-        ?   fVector_tf1_local[lBin]
-        :   static_cast<TF1*>(nullptr);
-    
-    printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
-            "\t x = %f, lBin = %zu, lTF1_local_good = %p, found existing lTF1_local_good ? %s.\n", 
-           id.data(),
-           *x,
-           lBin,
-           lTF1_local_good,
-           lTF1_local_good ? "yes" : "no");
+    // this means there is alrady an existing local TF1.
+    if (isBinAlreadyInVector ){
+        lTF1_local_good = &fVector_tf1_local.at(static_cast<size_t>(lBinHisto));
+        if (lTF1_local_good){
+            shouldInsertInside = false;
+            wasObtainedFromCache = true;
+        }
 
-    // (re)insert if necessary
-    if (!lTF1_local_good){   
-        // this creates a new TF1 on HEAP!     
-        lTF1_local_good = GetLocalExponentialTF1(fTH1, 
-                                                 *x,
-                                                 fIntegrate,
-                                                 fUseXtimesExp);  
+    // if the vector length is such that it can be inserted at the back, do it
+    } else if (shouldInsertInside || canInsertAtBack){
 
-        fVector_tf1_local[lBin] = lTF1_local_good;
-        printf("%s: utils_TH1::TH1_ExponentialInterpolation::Evaluate():"
-                "\n\t\t%s local TF1 with name = %s"
-                "\n\t\tfor bin %zu at x = %f into fVector_tf1_local.\n",
-               lTF1_local_good ? "INFO" : "WARNING",
-               lTF1_local_good ? "Inserted new" : "Could not store", 
-               lTF1_local_good->GetName(), 
-               lBin, 
-               *x);
-    } // done checking all conditions and pointers
+        // this should call copy constructor on the new TF1 returned by GetNewLocalExponentialTF1
+        TF1 *lTF1_temp = GetNewLocalExponentialTF1(fTH1, 
+                                                   *x, 
+                                                   fIntegrate, 
+                                                   fUseXtimesExp);
+        if (lTF1_temp){
+            auto lIt_vec_bin_i = fVector_tf1_local.begin() + lBinHisto; 
+            if (lIt_vec_bin_i != fVector_tf1_local.end()){
+                fVector_tf1_local.erase(lIt_vec_bin_i);
+            }
+            lTF1_local_good = &*fVector_tf1_local.emplace(lIt_vec_bin_i,  *lTF1_temp);
+            if (lTF1_local_good != lTF1_temp){
+                printf("INFO: Copy constructor was called as assumend. Deleting lTF1_temp.\n");
+                delete lTF1_temp;
+            } else {
+                printf("INFO: Strange: Copy constructor was NOT called as assumend. NOT deleting lTF1_temp.\n");
+            }           
+        } else {
+            printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                    "\tGetNewLocalExponentialTF1() returned nullptr. This call of Evaluate at *x = %f will return 0. later.\n",
+                   id.data(),
+                   *x);
+        }
+    } else {
+        // todo: I think this branch never gets called because it will exit already at the first possibility
+        printf("// line 349: todo: I think this branch never gets called because it will exit already at the first possibility.\n"
+                "\tINFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                "\t\tThe requested x = %f corresponds to the overflow bin number or even higher.\n"
+                "\t\tfTH1.GetNbinsX() = %d, fVector_tf1_local.size() = %zu.\n"
+                "\t\tWon't insert new function. This will return 0 later.\n",
+              id.data(),
+              *x,
+              fTH1.GetNbinsX(),
+              fVector_tf1_local.size());
+    }
 
-    return lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
+    if (lTF1_local_good){
+
+        // uncomment for a printf statement for every function value returned
+        /* 
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
+                "\t x = %f, lBinHisto = %d, lTF1_local_good = %p, was obtained from cache ? %s.\n", 
+            id.data(),
+            *x,
+            lBinHisto,
+            lTF1_local_good,
+            wasObtainedFromCache ? "yes" : "no"); 
+        */
+        lResultValue = lTF1_local_good->Eval(*x);
+    }
+
+    if (!lResultValue){
+        // printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
+        //         "\t returning lResultValue = %f\n",
+        //     id.data(),
+        //     lResultValue);
+    }
+    return lResultValue;
 }
 
 //_________________________________________________________________________________________________
@@ -371,15 +466,68 @@ bool utils_TH1::TH1_ExponentialInterpolation::TF1GoodForX(TF1 const  &theTF1,
 /*
 Static base class to maintain a map over all existing utils_TH1::TH1_ExponentialInterpolations
 */
-utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(std::string const &_id,
-                                                                                    TH1         const &_th1,
-                                                                                    bool               _integrate,
-                                                                                    bool               _useXtimesExp)
-    : id(Form("TH1_ExponentialInterpolation_static_%s_%s", _id.data(), _th1.GetName())),
-      fMap_TH1_ExponentialInterpolation()
+//_________________________________________________________________________________________________
+utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static()
+:    id(Form("TH1_ExponentialInterpolation_static_default")),
+     fMap_TH1_ExponentialInterpolation()
 {
-    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(): instance %s:\n",
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::(): Default constructor called.\n"
+            "\tCreated Instance. %s\n",
+            id.data());
+}
+
+//_________________________________________________________________________________________________
+utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(std::string const &theIdSuffix)
+:    id(Form("TH1_ExponentialInterpolation_static_%s", theIdSuffix.data())),
+     fMap_TH1_ExponentialInterpolation()
+{
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static"
+            "(std::string const &theIdSuffix): instance: %s\n"
+            "\tDefault constructor called.\n",
+            id.data());
+}
+
+//_________________________________________________________________________________________________
+utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(
+    utils_TH1::TH1_ExponentialInterpolation_static const &theRef
+)
+:   
+    id(theRef.id),
+    fMap_TH1_ExponentialInterpolation(theRef.fMap_TH1_ExponentialInterpolation)    
+{
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &theRef): instance: %s\n"
+            "\tCalled copy constructor. New Element has properties:\n"
+            "\t id: %s, fMap_TH1_ExponentialInterpolation = %p\n",
+            id.data(),
+            id.data(),
+            &fMap_TH1_ExponentialInterpolation);
+}
+
+/* 
+    The only function that fills the the base member fMap_TH1_ExponentialInterpolation.
+    That means it creates new TH1_ExponentialInterpolation on heap and fills the pair <&TH1, TH1_ExponentialInterpolation*> 
+    into the map
+*/
+
+//_________________________________________________________________________________________________
+utils_TH1::TH1_ExponentialInterpolation*
+    utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance(TH1         const &_th1,
+                                                                              bool               _integrate,
+                                                                              bool               _useXtimesExp)
+{
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(): instance %s:\n"
+            "\tWill insert a new <&_TH1, TH1_ExponentialInterpolation*> , into map fMap_TH1_ExponentialInterpolation if key"
+            "\tnot already in map.\n",
            id.data());
+    
+    auto lIt_found = fMap_TH1_ExponentialInterpolation.find(&_th1);
+    if (lIt_found != fMap_TH1_ExponentialInterpolation.end()){
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance(): instance %s"
+                "Found element for TH1 %s in map. Will return an iterator to the element.\n",
+                id.data(),
+               _th1.GetName());
+        return lIt_found->second;
+    }
 
    utils_TH1::TH1_ExponentialInterpolation *lTH1_ExpInter_Instance_ptr = new utils_TH1::TH1_ExponentialInterpolation(
         id,
@@ -389,32 +537,34 @@ utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_sta
         _useXtimesExp,
         true /* _verbose */);
 
-    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static():\n"
-           "\tCreated instance %s with options:\n"
-           "\t\t parent: %p, th1: %s, integrate = %d, useXtimesExp = %d.\n",
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance():\n"
+            "\tCreated instance %s with options:\n"
+            "\t\t parent: %p, th1: %s, integrate = %d, useXtimesExp = %d.\n",
            id.data(),
            this,
            _th1.GetName(),
            _integrate,
            _useXtimesExp);
-
+    
     if (!lTH1_ExpInter_Instance_ptr){
         printf("FATAL: utils_TH1::TH1_ExponentialInterpolation_static():\n"
-               "\tTH1_ExponentialInterpolation instance could not be created. Returning.\n");
-               return;
+               "\tTH1_ExponentialInterpolation instance could not be created. Returning nullptr.\n");
+        return nullptr;
     }
-    auto const &lPair = fMap_TH1_ExponentialInterpolation.insert(
+
+    auto const &lPair_ref_success = fMap_TH1_ExponentialInterpolation.insert(
         std::pair{ &_th1, lTH1_ExpInter_Instance_ptr }
     );
 
     TH1_ExponentialInterpolation &lTH1_ExpInter_Instance = *lTH1_ExpInter_Instance_ptr;
-    if (!lPair.second){
-        printf("FATAL: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(): id: %s\n"
-                "\tCould not insert created lTH1_ExpInter_Instance into fMap_TH1_ExponentialInterpolation!\n"
-                "\thisto name: %s. Returning.\n",
+    if (!lPair_ref_success.second){
+        printf("WARNING: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(): id: %s\n"
+                "\tInsertion did not take place, that means the element is already in the map and stays as is.\n"
+                "Normally this should not happen here because it was just searched for before!\n"
+                "\thisto name and address: %s %p .\n",
                id.data(),
-               _th1.GetName());
-        return;
+               _th1.GetName(),
+               &_th1);
     }
 
     printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static(): instance: %s\n"
@@ -429,6 +579,8 @@ utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_sta
            lTH1_ExpInter_Instance.IsInitialized()
                ?    lTH1_ExpInter_Instance.GetTF1_global_const()->GetName()
                :    "nullptr");
+
+    return lPair_ref_success.first->second;
 }
 
 //_________________________________________________________________________________________________
@@ -631,6 +783,14 @@ TF1 const
 
     return lTF1_global_const;
 } // last utils_TH1::TH1_ExponentialInterpolation_static methods
+
+//_________________________________________________________________________________________________
+TF1 *utils_TH1::TH1_ExponentialInterpolation_static::InitializeWithHisto(TH1 const  &theTH1, 
+                                                                         bool        theIntegrate, 
+                                                                         bool        theUseXtimesExp)
+{
+    return insertNewExpInterInstance(theTH1, theIntegrate, theUseXtimesExp)->GetTF1_global();
+}
 
 //_________________________________________________________________________________________________
 bool utils_TH1::TH1_ExponentialInterpolation_static::IsInitialized() const
