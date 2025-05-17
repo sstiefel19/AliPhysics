@@ -166,6 +166,7 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
         double a = TMath::Log(y1) - b*x1;
         lResult->SetParameters(a,b);
     } // end don't integrate, use bin contents
+    printf("SFS line 169: lResult = %p\n", lResult);
     return lResult;
 }
 
