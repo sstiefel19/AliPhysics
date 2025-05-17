@@ -72,12 +72,18 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
                                                                         bool    theIntegrate, 
                                                                         bool    theUseXtimesExp)
 {
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(): id: %s\n"
+            "\tCalled with theX = %f, theIntegrate = %d, theUseXtimesExp = %d\n",
+           id.data(),
+           theX,
+           theUseXtimesExp);
+
     TAxis const &lAxis = *theTH1.GetXaxis();    
-    auto findFunctionI = [&](){
+    auto findFunctionI = [&lAxis](){
         int histoBinI = lAxis.FindBin(theX);
         return (theX >= lAxis.GetBinCenter(histoBinI)) 
-        ? histoBinI 
-        : std::max(histoBinI-1, 0);
+            ?    histoBinI 
+            :    std::max(histoBinI-1, 0);
     };
     int const iLeftBin = findFunctionI();
     int const iRightBin = iLeftBin+1;
