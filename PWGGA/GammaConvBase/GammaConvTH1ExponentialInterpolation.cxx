@@ -270,7 +270,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     double lResultValue = 0.;
 
     // return 0 here if outside the range bins 1..nBinsX of fTH1
-    bool isUnderOverFlow = !lBin || (lBin == (fTH1.GetNbinsX()+1); 
+    bool isUnderOverFlow = !lBin || (lBin == (fTH1.GetNbinsX() + 1)); 
     if (isUnderOverFlow)){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
                 "\tcalled for x = %f, the %sflow bin of %s. This will later return 0.\n",
@@ -303,23 +303,23 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
                                                     fIntegrate,
                                                     fUseXtimesExp);  
         if (lTF1_local_good){
-            auto lBin_it = vec.begin() + lBin;
-            lTF1_local_gfVector_tf1_local.erase(lBin_it);            
-            auto lIt = fVector_tf1_local.emplace(lBin_it, *lTF1_local_good);
-            if (lIt == fVector_tf1_local.end()){
+            auto lBin_it = fVector_tf1_local.begin() + lBin;
+            fVector_tf1_local.erase(lBin_it);            
+            auto lEmplace_it = fVector_tf1_local.emplace(lBin_it, *lTF1_local_good);
+            if (lEmplace_it == fVector_tf1_local.end()){
                 printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
                         "\templace after erase was not sucuessfull.. Returning 0.\n",
                         id.data());
             } 
-        } else {
+        } 
+        else {
             printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
                         "\tCreation of a working lTF1_local_good was not successfull. Returning 0.\n",
                         id.data());
         }            
     } // done checking all conditions and pointers
     
-    double lResultValue = lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
-    
+    lResultValue = lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
     if (!lResultValue){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
                 "\t returning lResultValue = %f\n",
