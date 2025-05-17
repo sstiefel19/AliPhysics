@@ -85,18 +85,32 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
 
     printf("found bins: iLeftBin = %d, iRightBin = %d\n",
            iLeftBin, iRightBin);
-
-    std::pair<double, double> lRange_edgeToEdge( 
-        { lAxis.GetBinLowEdge(iLeftBin), lAxis.GetBinUpEdge(iRightBin) });    
-    printf("line91\n");
-    std::pair<double, double> lRange_centerToCenter( 
-        { lAxis.GetBinCenter(iLeftBin), lAxis.GetBinCenter(iRightBin) });
-    printf("line94\n");
-    std::pair<double, double> const &lFunctionDefineRange = theIntegrate 
-        ?   lRange_edgeToEdge
-        :   lRange_centerToCenter;
     
-    printf("line99\n");
+    double xmin = lAxis.GetBinLowEdge(iLeftBin);
+    double xmax = lAxis.GetBinUpEdge(iRightBin)
+    // std::pair<double, double> lRange_edgeToEdge( 
+    //     { lAxis.GetBinLowEdge(iLeftBin),  });    
+    printf("line93\n");
+
+    double cl = lAxis.GetBinCenter(iLeftBin);
+    double cr = lAxis.GetBinCenter(iRightBin);
+
+    double rangeMin = theIntegrate
+        ?   xmin
+        :   cl;
+    
+    double rangeMax = theIntegrate
+        ?   xmax
+        :   cr;
+    
+    // std::pair<double, double> lRange_centerToCenter( 
+    //     { lAxis.GetBinCenter(iLeftBin), lAxis.GetBinCenter(iRightBin) });
+    printf("line100\n");
+    // std::pair<double, double> const &lFunctionDefineRange = theIntegrate 
+    //     ?   lRange_edgeToEdge
+    //     :   lRange_centerToCenter;
+    
+    printf("line105\n");
 
     std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d", 
                                    theTH1.GetName(),
@@ -108,23 +122,25 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
                                        :    "calc_analyt_through_bin_centers",
                                    iLeftBin,
                                    iRightBin));
-                                   
-    printf("Will create new TF1 with name = %s\n",
-           lFunctionName.data());
+
+    printf("Will create new TF1 with name = %s in range [ %f - %f |\n",
+           lFunctionName.data(),
+           rangeMin,
+           rangeMax);
     
     TF1 *lResult = new TF1(lFunctionName.data(),
                            Form("%sexpo(0)", 
-                           theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
-                           lFunctionDefineRange.first,
-                           lFunctionDefineRange.second);
+                                theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
+                           rangeMin,
+                           rangeMax);
 
     std::string lFitOptions("QFMN0"); // Q = minimum printing
     if (theIntegrate){
         theTH1.Fit(lResult, 
                     lFitOptions.append(theIntegrate ? "I" : "").data(), 
                     "" /* global fit options I believe */, 
-                    lFunctionDefineRange.first, 
-                    lFunctionDefineRange.second);
+                    rangeMin, 
+                    rangeMax);
         lResult->SetRange(lRange_centerToCenter.first, lRange_centerToCenter.second);
     } 
      // dont integrate, use bin contents
