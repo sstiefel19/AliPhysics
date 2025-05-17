@@ -87,7 +87,7 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
            iLeftBin, iRightBin);
     
     double xmin = lAxis.GetBinLowEdge(iLeftBin);
-    double xmax = lAxis.GetBinUpEdge(iRightBin)
+    double xmax = lAxis.GetBinUpEdge(iRightBin);
     // std::pair<double, double> lRange_edgeToEdge( 
     //     { lAxis.GetBinLowEdge(iLeftBin),  });    
     printf("line93\n");
@@ -141,12 +141,12 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
                     "" /* global fit options I believe */, 
                     rangeMin, 
                     rangeMax);
-        lResult->SetRange(lRange_centerToCenter.first, lRange_centerToCenter.second);
+        lResult->SetRange(rangeMin, rangeMax);
     } 
      // dont integrate, use bin contents
     else { // dont integrate, use bin contents
-        double x1 = lRange_centerToCenter.first;
-        double x2 = lRange_centerToCenter.second;
+        double x1 = rangeMin,
+        double x2 = rangeMax;
         double y1 = theTH1.GetBinContent(iLeftBin);
         double y2 = theTH1.GetBinContent(iRightBin);
 
