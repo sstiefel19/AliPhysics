@@ -177,7 +177,7 @@ double utils_TH1::TH1_ExponentialInterpolation::EvaluateLocalExponentialInterpol
     bool    theIntegrate /*= false*/,
     bool    theUseXtimesExp /*= false*/)
 {
-    TF1* f = GetNewLocalExponentialTF1(theTH1, theX, theIntegrate, theUseXtimesExp);
+    TF1 *f = GetNewLocalExponentialTF1(theTH1, theX, theIntegrate, theUseXtimesExp);
     return f ? f->Eval(theX) : 0.;
 }
 
@@ -229,6 +229,7 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
         
         if (lTF1_local_good){
             // all good
+            printf("SFS line 232 case all good\n");
             fVector_tf1_local.emplace_back(*lTF1_local_good);
             delete lTF1_local_good;
             ++lNumberOfInsertions;
