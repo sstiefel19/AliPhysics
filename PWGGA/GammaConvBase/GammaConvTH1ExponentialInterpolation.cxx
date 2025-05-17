@@ -170,15 +170,13 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
     size_t nBinsX = theTH1.GetNbinsX();
 
     // enter 0 function for underflow bin
-    fVector_tf1_local.emplace_back( 
-        {{   
-            "TF1bin0", 
-            "0",  
-            theTH1.GetXaxis()->GetBinLowEdge(1) 
-                - theTH1.GetXaxis()->GetBinWidth(1),
-            theTH1.GetXaxis()->GetBinLowEdge(1),
-            0
-        }}
+    fVector_tf1_local.emplace_back(   
+        "TF1bin0", 
+        "0",  
+        theTH1.GetXaxis()->GetBinLowEdge(1) 
+            - theTH1.GetXaxis()->GetBinWidth(1),
+        theTH1.GetXaxis()->GetBinLowEdge(1),
+        0
     );
     
     size_t lNumberOfInsertions = 0;
@@ -203,7 +201,7 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
         
         if (lTF1_local_good){
             // all good
-            fVector_tf1_local.emplace_back({ *lTF1_local_good });
+            fVector_tf1_local.emplace_back(*lTF1_local_good);
             delete lTF1_local_good;
             ++lNumberOfInsertions;
         } else {    
@@ -230,7 +228,7 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
                    lTF1_local_good->GetName());
             
             // this should create a copy in place, so I delete the old instance
-            fVector_tf1_local.emplace_back({ *lTF1_local_new }); 
+            fVector_tf1_local.emplace_back(*lTF1_local_new); 
             delete lTF1_local_new;
             ++lNumberOfInsertions;                        
         }
@@ -238,15 +236,13 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
 
     // enter 0 function for overflow bin
     std::string lName(Form("TF1bin%zu", nBinsX+1));
-    fVector_tf1_local.emplace_back( {
-                                        lName.data(), 
+    fVector_tf1_local.emplace_back( lName.data(), 
                                         "0", 
                                         theTH1.GetXaxis()->GetBinLowEdge(1) 
                                             - theTH1.GetXaxis()->GetBinWidth(1),
                                         theTH1.GetXaxis()->GetBinLowEdge(1),
                                         0
-                                     }
-                                   );
+                                    );
 
 
     fTF1_global = &theGlobalTF1;
@@ -307,7 +303,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
             if (lBin <= fVector_tf1_local.size()){
               
                 lTF1_local_gfVector_tf1_localood.erase(lBin);            
-                auto lIt = fVector_tf1_local.emplace(lBin, { *lTF1_local_good });
+                auto lIt = fVector_tf1_local.emplace(lBin, *lTF1_local_good);
                 
                 if (lIt != fVector_tf1_local.end()){
                     lTF1_local_good = &*lIt; 
