@@ -211,10 +211,12 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
     for (size_t iBin = 1; iBin <= nBinsX; ++iBin){
         double x = theTH1.GetBinCenter(iBin);
         theGlobalTF1.Eval(x); // this creates one local function per bin and stores it in fVector
-
+printf("SFS line 214 case all good x = %f, iBin = %d\n",
+       x, iBin);
         TF1 *lTF1_candidate = nullptr;
         if (iBin <= fVector_tf1_local.size()){
-            lTF1_candidate = &fVector_tf1_local[iBin];
+            printf("SFS line 217 case all good\n");
+            lTF1_candidate = fVector_tf1_local[iBin];
         }
         else {
             lTF1_candidate = utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(
@@ -311,10 +313,19 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     // try to get local tf1 from vector
     bool isInRangeOfHisto = lBin <= fVector_tf1_local.size();
+    // auto  *lTF1_local_good = isInRangeOfHisto 
+    //     ?   &fVector_tf1_local[lBin]
+    //     :   static_cast<TF1*>(nullptr);
     auto  *lTF1_local_good = isInRangeOfHisto 
-        ?   &fVector_tf1_local[lBin]
+        ?   GetNewLocalExponentialTF1(fTH1, *x, fIntegrate, fUseXtimesExp)
         :   static_cast<TF1*>(nullptr);
     
+    if (lTF1_local_good){
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+               "\templacing new lTF1_local_good in ");
+    }
+
+
     printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
             "\t x = %f, lBin = %zu, lTF1_local_good = %p, found existing lTF1_local_good ? %s.\n", 
            id.data(),
