@@ -107,9 +107,8 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
                                        ?    "fitted_w/_int_cond" 
                                        :    "calc_analyt_through_bin_centers",
                                    iLeftBin,
-                                   iRightBin, 
-                                   )
-                            );
+                                   iRightBin));
+                                   
     printf("Will create new TF1 with name = %s\n",
            lFunctionName.data());
     
