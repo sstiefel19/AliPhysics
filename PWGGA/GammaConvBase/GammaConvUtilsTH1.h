@@ -98,10 +98,10 @@ class utils_TH1
                     - the lower and upper edges of the two nearest bins to theX 
                     - the two coefficients are determined from a fit using the two bins  
                 */
-                TF1 *GetLocalExponentialTF1(TH1    &theTH1, 
-                                            double  theX, 
-                                            bool    theIntegrate, 
-                                            bool    theUseXtimesExp);
+                TF1 *GetNewLocalExponentialTF1(TH1    &theTH1, 
+                                               double  theX, 
+                                               bool    theIntegrate, 
+                                               bool    theUseXtimesExp);
                 
                 double 
                     EvaluateLocalExponentialInterpolate(TH1    &theTH1, 

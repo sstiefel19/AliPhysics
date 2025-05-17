@@ -171,14 +171,14 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
 
     // enter 0 function for underflow bin
     fVector_tf1_local.emplace_back( 
-        {   
+        {{   
             "TF1bin0", 
             "0",  
             theTH1.GetXaxis()->GetBinLowEdge(1) 
                 - theTH1.GetXaxis()->GetBinWidth(1),
             theTH1.GetXaxis()->GetBinLowEdge(1),
             0
-        }
+        }}
     );
     
     size_t lNumberOfInsertions = 0;
@@ -306,22 +306,22 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
         if (lTF1_local_good){
             if (lBin <= fVector_tf1_local.size()){
               
-                lTF1_local_good.erase(lBin);            
+                lTF1_local_gfVector_tf1_localood.erase(lBin);            
                 auto lIt = fVector_tf1_local.emplace(lBin, { *lTF1_local_good });
                 
-                
                 if (lIt != fVector_tf1_local.end()){
-                    lTF1_local_good = &*lIt 
+                    lTF1_local_good = &*lIt; 
                  } else{
 
             }     
 
-             
-             
-
     } // done checking all conditions and pointers
-
-    return lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
+    double lResultValue = lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
+            "\t returning lResultValue = %f\n",
+           id.data(),
+           lResultValue);
+    return lResultValue;
 }
 
 //_________________________________________________________________________________________________
