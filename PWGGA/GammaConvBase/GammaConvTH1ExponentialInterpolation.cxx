@@ -145,7 +145,7 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
     } 
      // dont integrate, use bin contents
     else { // dont integrate, use bin contents
-        double x1 = rangeMin,
+        double x1 = rangeMin;
         double x2 = rangeMax;
         double y1 = theTH1.GetBinContent(iLeftBin);
         double y2 = theTH1.GetBinContent(iRightBin);
