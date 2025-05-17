@@ -76,6 +76,7 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
             "\tCalled with theX = %f, theIntegrate = %d, theUseXtimesExp = %d\n",
            id.data(),
            theX,
+           theIntegrate,
            theUseXtimesExp);
 
     TAxis const &lAxis = *theTH1.GetXaxis();    
@@ -95,15 +96,19 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
         ?   lRange_edgeToEdge
         :   lRange_centerToCenter;
 
-    std::string lFunctionName(Form("%s_localExponential%s%s", 
-                                   theTH1.GetName(), 
+    std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d", 
+                                   theTH1.GetName(),
+                                   iLeftBin,
+                                   iRightBin, 
                                    theUseXtimesExp 
                                        ?    "_*x" 
                                        :    "",
                                    theIntegrate 
                                        ?    "fitted_w/_int_cond" 
                                        :    "calc_analyt_through_bin_centers"));
-
+    printf("Will create new TF1 with name = %s\n",
+           lFunctionName.data());
+    
     TF1 *lResult = new TF1(lFunctionName.data(),
                            Form("%sexpo(0)", 
                            theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
