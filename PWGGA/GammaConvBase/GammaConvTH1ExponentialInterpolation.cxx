@@ -88,24 +88,28 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
 
     std::pair<double, double> lRange_edgeToEdge( 
         { lAxis.GetBinLowEdge(iLeftBin), lAxis.GetBinUpEdge(iRightBin) });    
-
+    printf("line91\n");
     std::pair<double, double> lRange_centerToCenter( 
         { lAxis.GetBinCenter(iLeftBin), lAxis.GetBinCenter(iRightBin) });
-
+    printf("line94\n");
     std::pair<double, double> const &lFunctionDefineRange = theIntegrate 
         ?   lRange_edgeToEdge
         :   lRange_centerToCenter;
+    
+    printf("line99\n");
 
     std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d", 
                                    theTH1.GetName(),
-                                   iLeftBin,
-                                   iRightBin, 
                                    theUseXtimesExp 
                                        ?    "_*x" 
                                        :    "",
                                    theIntegrate 
                                        ?    "fitted_w/_int_cond" 
-                                       :    "calc_analyt_through_bin_centers"));
+                                       :    "calc_analyt_through_bin_centers",
+                                   iLeftBin,
+                                   iRightBin, 
+                                   )
+                            );
     printf("Will create new TF1 with name = %s\n",
            lFunctionName.data());
     
