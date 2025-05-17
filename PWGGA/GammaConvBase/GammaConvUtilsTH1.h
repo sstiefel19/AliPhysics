@@ -17,7 +17,7 @@ class utils_TH1
 
         ~utils_TH1();
         
-        utils_TH1(utils_TH1 const &theRef) = delete;
+        utils_TH1(utils_TH1 const &theRef);
         
         
         /* 

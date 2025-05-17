@@ -12,6 +12,18 @@ utils_TH1::utils_TH1(std::string const &theId /*= "utils_TH1_defConstructor"*/)
 }
 
 //_________________________________________________________________________________________________
+utils_TH1::utils_TH1(utils_TH1 const &theRef)
+:   id{theRef.id},
+    fTH1_ExponentialInterpolation_static_instance_ptr{theRef.fTH1_ExponentialInterpolation_static_instance_ptr}
+{
+    printf("INFO: utils_TH1::utils_TH1(utils_TH1 const &theRef: created instance %s\n"
+           "\tfrom &theRef = %p\n",
+           id.data(),
+           &theRef);
+}
+
+
+//_________________________________________________________________________________________________
 TF1 *utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(std::string const &theNewName, 
                                                                TH1         const &theTH1, 
                                                                bool               theIntegrate /* = false*/,
