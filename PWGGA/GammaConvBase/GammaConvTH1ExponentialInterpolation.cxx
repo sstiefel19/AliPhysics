@@ -271,7 +271,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     // return 0 here if outside the range bins 1..nBinsX of fTH1
     bool isUnderOverFlow = !lBin || (lBin == (fTH1.GetNbinsX() + 1)); 
-    if (isUnderOverFlow)){
+    if (isUnderOverFlow){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
                 "\tcalled for x = %f, the %sflow bin of %s. This will later return 0.\n",
                id.data(),
