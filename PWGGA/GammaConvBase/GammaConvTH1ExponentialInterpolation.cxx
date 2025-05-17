@@ -79,13 +79,13 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
            theUseXtimesExp);
 
     TAxis const &lAxis = *theTH1.GetXaxis();    
-    auto findFunctionI = [&lAxis](){
-        int histoBinI = lAxis.FindBin(theX);
-        return (theX >= lAxis.GetBinCenter(histoBinI)) 
+    auto findFunctionI = [](TAxis &theAxis, double theX){
+        int histoBinI = theAxis.FindBin(theX);
+        return (theX >= theAxis.GetBinCenter(histoBinI)) 
             ?    histoBinI 
             :    std::max(histoBinI-1, 0);
     };
-    int const iLeftBin = findFunctionI();
+    int const iLeftBin = findFunctionI(lAxis, theX);
     int const iRightBin = iLeftBin+1;
 
     std::pair<double, double> lRange_edgeToEdge( 
