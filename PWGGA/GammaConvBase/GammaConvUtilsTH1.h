@@ -8,10 +8,10 @@ class TH1;
 #include <string>
 
 /*
-        In utils_TH1 there live 
-            utils_TH1::TH1_ExponentialInterpolation_static:    the public utils_TH1::TH1_ExponentialInterpolation interface
-            utils_TH1::TH1_ExponentialInterpolation:            a private helper class
-    */
+    In utils_TH1 there live 
+    utils_TH1::TH1_ExponentialInterpolation_static:     a private helper class 
+    utils_TH1::TH1_ExponentialInterpolation:            another private helper class 
+*/
     
 class utils_TH1
 { 
@@ -31,6 +31,8 @@ class utils_TH1
         // get created during construction 
         TF1   &tf1_global;           
         */
+        class TH1_ExponentialInterpolation_static;
+        
         class TH1_ExponentialInterpolation
         {   
             public:
