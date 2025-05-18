@@ -331,9 +331,9 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
             lBin,
             lTF1_local_good,
             wasObtainedFromCache ? "yes" : "no");
-        printf("dumping lTF1_local_good:\n");
-        lTF1_local_good->Dump();
-        printf("done dumping lTF1_local_good:\n");
+        // printf("dumping lTF1_local_good:\n");
+        // lTF1_local_good->Dump();
+        // printf("done dumping lTF1_local_good:\n");
         lResultValue = lTF1_local_good->Eval(*x);
     }
 
