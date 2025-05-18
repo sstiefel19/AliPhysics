@@ -229,16 +229,18 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
                y,
                fVector_tf1_local.size());
     }
+    printf("SFS line 232 case all good: size vector = %zu\n",
+           fVector_tf1_local.size());
 
     // enter 0 function for overflow bin
     std::string lName(Form("TF1bin%zu", nBinsX+1));
-    fVector_tf1_local.emplace_back( lName.data(), 
-                                        "0", 
-                                        theTH1.GetXaxis()->GetBinLowEdge(1) 
-                                            - theTH1.GetXaxis()->GetBinWidth(1),
-                                        theTH1.GetXaxis()->GetBinLowEdge(1),
-                                        0
-                                    );
+    fVector_tf1_local.emplace_back(lName.data(), 
+                                   "0", 
+                                   theTH1.GetXaxis()->GetBinLowEdge(1) 
+                                       - theTH1.GetXaxis()->GetBinWidth(1),
+                                   theTH1.GetXaxis()->GetBinLowEdge(1),
+                                   0);
+
     printf("SFS line 242 case all good: size vector = %zu\n",
            fVector_tf1_local.size());
 
