@@ -414,6 +414,20 @@ utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_sta
             id.data());
 }
 
+//_________________________________________________________________________________________________
+utils_TH1::TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &theRef)
+:   
+    id(theRef.id),
+    fMap_TH1_ExponentialInterpolation(theRef.fMap_TH1_ExponentialInterpolation)    
+{
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &theRef): instance: %s\n"
+            "\tCalled copy constructor. New Element has properties:\n"
+            "\t id: %s, fMap_TH1_ExponentialInterpolation = %p\n",
+            id.data(),
+            id.data(),
+            &fMap_TH1_ExponentialInterpolation);
+}
+
 /* 
     The only function that fills the the base member fMap_TH1_ExponentialInterpolation.
     That means it creates new TH1_ExponentialInterpolation on heap and fills the pair <&TH1, TH1_ExponentialInterpolation*> 

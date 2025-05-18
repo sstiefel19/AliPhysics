@@ -123,7 +123,7 @@ class utils_TH1
         class TH1_ExponentialInterpolation_static {
             public:
                 TH1_ExponentialInterpolation_static() = delete;
-                TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &) = delete;
+                TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &theRef);
                 TH1_ExponentialInterpolation_static(std::string const &theIdSuffix);
                 
                 // the only function that creates new TH1_ExponentialInterpolation on heap and stores its pointer in a member map.
@@ -185,9 +185,9 @@ class utils_TH1
         */
         utils_TH1(std::string const &theId = "utils_TH1_defConstructor");
 
-        ~utils_TH1();
-        
-        utils_TH1(utils_TH1 const &theRef);    
+        utils_TH1(utils_TH1 const &theRef);  
+
+        ~utils_TH1();  
         
         /* 
             get globally defined TF1 which is either fitted to the bin centers 
