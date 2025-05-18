@@ -461,7 +461,12 @@ void AliConvEventCuts::InitCutHistograms(TString name, Bool_t preCut){
   }
 
   if (hReweightMCHistPi0_inv || hReweightMCHistEta_inv){
-    hCountMissingEventInformation = new TH1F("hCountMissingEventInformation", "hCountMissingEventInformation;missing information;counts", );
+    hCountMissingEventInformation = new TH1F(
+        "hCountMissingEventInformation", 
+        "hCountMissingEventInformation;missing information;counts", 
+        7, 
+        0., 
+        6.);
     fHistograms->Add(hCountMissingEventInformation);
   }
 
