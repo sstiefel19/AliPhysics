@@ -44,15 +44,77 @@ class utils_TH1
             utils_TH1::TH1_ExponentialInterpolation:            a private helper class
     */
     
-    class TH1_ExponentialInterpolation_static;    
-    private:       
+        public:
+    // =================== utils_TH1::TH1_ExponentialInterpolation_static ======================================== 
         
+        //  Static base class to maintain a map over all existing utils_TH1::TH1_ExponentialInterpolations
+        class TH1_ExponentialInterpolation_static {
+            public:
+                TH1_ExponentialInterpolation_static() = delete;
+                TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &) = delete;
+                TH1_ExponentialInterpolation_static(std::string const &theIdSuffix);
+                
+                // the only function that creates new TH1_ExponentialInterpolation on heap and stores its pointer in a member map.
+                TH1_ExponentialInterpolation_static(std::string const &_id,
+                                                    TH1 const         &_th1,
+                                                    bool               _integrate,
+                                                    bool               _useXtimesExp);
+                
+                ~TH1_ExponentialInterpolation_static();
+
+                // returns a valid TF1 interpolation from stack or create new one if necessary
+                TF1 *GetInterpolationTF1(TH1 const  &theTH1,
+                                        bool        theIntegrate,
+                                        bool        theUseXtimesExp,
+                                        bool        theCreateNewIfNecessary = true);
+        
+                TF1 const
+                    *GetInterpolationTF1_const(TH1 const &theTH1) const;
+                
+                std::string const 
+                    GetId() const                { return id; } 
+                
+                TF1 *InitializeWithHisto(theTH1, 
+                                        theIntegrate, 
+                                        theUseXtimesExp);
+                
+                bool IsInitialized() const;
+        
+            private:
+        
+                // one of the two ways to create new TF1_globals with write access
+                // creates new TF1 on heap and inserts into map if non existing
+                //_________________________________________________________________________________________________
+                TF1 *createNew_TH1_ExponentialInterpolation(TH1 const  &_th1,
+                                                            bool        _integrate,
+                                                            bool        _useXtimesExp);
+                
+                // creates new TF1 on heap and inserts into map if non existing
+                //_________________________________________________________________________________________________
+                std::pair<TH1 const&, TH1_ExponentialInterpolation*>
+                    insertNewExpInterInstance(TH1         const &_th1,
+                                            bool               _integrate,
+                                            bool               _useXtimesExp);
+                
+
+                // utils_TH1::TH1_ExponentialInterpolation_static data members
+                std::string                                                     id;
+                
+                // todo: check if I really want it like that
+                // todo: check if it works
+                // static 
+                std::map<TH1 const*, utils_TH1::TH1_ExponentialInterpolation*>  fMap_TH1_ExponentialInterpolation;
+        }; // end class utils_TH1::TH1_ExponentialInterpolation_static {
+    
+    // namespace utils_TH1::
+    private:       
         std::string                          id;
 
         // this can hold all exponential interpolations for this instance of utils_TH1
         TH1_ExponentialInterpolation_static  fTH1_ExponentialInterpolation_static_instance; 
 
-        // ===================== class utils_TH1::TH1_ExponentialInterpolation ===================================
+        
+    // ===================== class utils_TH1::TH1_ExponentialInterpolation ===================================
         /*
         Main class for exponential interpolations of TH1 histograms
         It creates TF1 function objects that are driven from utils_TH1::TH1_ExponentialInterpolation instances,
@@ -151,75 +213,8 @@ class utils_TH1
 
     }; // end class utils_TH1::TH1_ExponentialInterpolation
 
-    public:
-// =================== utils_TH1::TH1_ExponentialInterpolation_static ======================================== 
-    /*
-        Static base class to maintain a map over all existing utils_TH1::TH1_ExponentialInterpolations
-        
-        data members:
-            std::string id;
-            std::map<TH1* const, utils_TH1::TH1_ExponentialInterpolation> fMap_utils_TH1::TH1_ExponentialInterpolation;
-    */
-    class TH1_ExponentialInterpolation_static {
-        public:
-            TH1_ExponentialInterpolation_static() = delete;
-            TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &) = delete;
-            TH1_ExponentialInterpolation_static(std::string const &theIdSuffix);
-            
-            // the only function that creates new TH1_ExponentialInterpolation on heap and stores its pointer in a member map.
-            TH1_ExponentialInterpolation_static(std::string const &_id,
-                                                TH1 const         &_th1,
-                                                bool               _integrate,
-                                                bool               _useXtimesExp);
-            
-            ~TH1_ExponentialInterpolation_static();
 
-            // returns a valid TF1 interpolation from stack or create new one if necessary
-            TF1 *GetInterpolationTF1(TH1 const  &theTH1,
-                                     bool        theIntegrate,
-                                     bool        theUseXtimesExp,
-                                     bool        theCreateNewIfNecessary = true);
+
     
-            TF1 const
-                *GetInterpolationTF1_const(TH1 const &theTH1) const;
-            
-            std::string const 
-                GetId() const                { return id; } 
-            
-            TF1 *InitializeWithHisto(theTH1, 
-                                     theIntegrate, 
-                                     theUseXtimesExp);
-
-
-            
-            bool IsInitialized() const;
-
-        private:
-            
-
-            // one of the two ways to create new TF1_globals with write access
-            // creates new TF1 on heap and inserts into map if non existing
-            //_________________________________________________________________________________________________
-            TF1 *createNew_TH1_ExponentialInterpolation(TH1 const  &_th1,
-                                                        bool        _integrate,
-                                                        bool        _useXtimesExp);
-            
-            // creates new TF1 on heap and inserts into map if non existing
-            //_________________________________________________________________________________________________
-            std::pair<TH1 const&, TH1_ExponentialInterpolation*>
-                insertNewExpInterInstance(TH1         const &_th1,
-                                          bool               _integrate,
-                                          bool               _useXtimesExp);
-            
-
-            // utils_TH1::TH1_ExponentialInterpolation_static data members
-            std::string                                                         id;
-            
-            // todo: check if I really want it like that
-            // todo: check if it works
-            // static 
-            std::map<TH1 const*, utils_TH1::TH1_ExponentialInterpolation*>  fMap_TH1_ExponentialInterpolation;
-
-    }; // end class utils_TH1::TH1_ExponentialInterpolation_static {
 }; //  end class utils_TH1
  
