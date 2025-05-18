@@ -280,9 +280,9 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     // try to get local tf1 from vector
     auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
-    bool isInRangeOfHisto = lIt_vecBin_i != fVector_tf1_local.end();
-
-    bool canInsertAtBack = lBin < fTH1.GetNbinsX();
+    bool canInsertAtBack = lBin <= fTH1.GetNbinsX();
+    
+    bool isInRangeOfHisto = !isUnderOverFlow;
     
     TF1 *lTF1_local_good = nullptr;
     bool wasObtainedFromCache = false;
@@ -313,9 +313,10 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     } else {
         printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
-                "\tCan not insert new TF1 local for bin %d because current size of vector is %zu\n"
-                "\tThis will return 0. later\n.",
-               id.data(),
+                "\tThe requested x = %f corresponds to bin number %d which is greater than fTH1.GetNbinsX() = %d.\n"
+                "\tWon't insert new function. This will return 0 later.\n",
+              id.data(),
+              *x,
               lBin,
               fVector_tf1_local.size());
     }
