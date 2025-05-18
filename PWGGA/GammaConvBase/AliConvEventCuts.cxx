@@ -228,6 +228,7 @@ AliConvEventCuts::AliConvEventCuts(const char *name,const char *title) :
   fMapPtWeightsIsFilledAndSane(kFALSE),
   fHistoRelDiffNewOldMesonWeights_Pi0(nullptr),
   fHistoRelDiffNewOldMesonWeights_Eta(nullptr),
+  hCountMissingEventInformation(nullptr),
   fUtils_TH1{"AliConvEventCuts_fUtils_TH1"},
   fDebugLevel(0)
 {
@@ -384,6 +385,7 @@ AliConvEventCuts::AliConvEventCuts(const AliConvEventCuts &ref) :
   fMapPtWeightsIsFilledAndSane(ref.fMapPtWeightsIsFilledAndSane),
   fHistoRelDiffNewOldMesonWeights_Pi0(ref.fHistoRelDiffNewOldMesonWeights_Pi0),
   fHistoRelDiffNewOldMesonWeights_Eta(ref.fHistoRelDiffNewOldMesonWeights_Eta),
+  hCountMissingEventInformation{ref.hCountMissingEventInformation},
   fUtils_TH1(ref.fUtils_TH1),
   fDebugLevel(ref.fDebugLevel)
 {
@@ -456,6 +458,11 @@ void AliConvEventCuts::InitCutHistograms(TString name, Bool_t preCut){
   if (hReweightMCHistGamma){
     hReweightMCHistGamma->SetName("MCInputForWeightingGamma");
     fHistograms->Add(hReweightMCHistGamma);
+  }
+
+  if (ptweightson){
+    hCountMissingEventInformation = new TH1F("hCountMissingEventInformation", "hCountMissingEventInformation;missing information;counts", );
+    fHistograms->Add(hCountMissingEventInformation);
   }
 
   if (fUseGetWeightForMesonNew){
@@ -7171,7 +7178,21 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
 
   // return false for nullptr
   auto checkPointer = [&](TObject *thePointer, std::string const &theName, bool theWarn = false){
-    if (!thePointer && theWarn){
+    if (!thePointer && theWarn)
+    {
+      size_t lCategory = 0;  
+      if (theName == "lAODMCParticleClonesArray"){
+        lCategory = 1;
+      } else if (theName == "lMCEvent") {
+        lCategory = 2;
+      } else if (theName == "lCocktailHeaderAOD") {
+        lCategory = 3;
+      } else if (theName == "lCocktailHeaderESD") {
+        lCategory = 4;
+      } else if (theName == "lGenHeaders") {
+        lCategory = 5;  
+      } 
+      hCountMissingEventInformation->Fill(lCategory);         
       AliWarning(Form("Pointer %s is zero for AliVEvent = %p . Returning early.\n", 
                       theName.data(), event));
       return true;
