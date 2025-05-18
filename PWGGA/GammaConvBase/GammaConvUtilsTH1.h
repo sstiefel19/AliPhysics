@@ -35,7 +35,7 @@ class utils_TH1
         
         bool IsGlobalPieceWiseExponentialInterpolationInitialized() const  
         {   
-            return static_cast<bool>(fTH1_ExponentialInterpolation_static_instance_ptr);
+            return static_cast<bool>(fTH1_ExponentialInterpolation_static_instance.IsInitialized());
         }
 
     /*
@@ -50,7 +50,7 @@ class utils_TH1
         std::string                          id;
 
         // this can hold all exponential interpolations for this instance of utils_TH1
-        TH1_ExponentialInterpolation_static  *fTH1_ExponentialInterpolation_static_instance_ptr; 
+        TH1_ExponentialInterpolation_static  fTH1_ExponentialInterpolation_static_instance; 
 
         // ===================== class utils_TH1::TH1_ExponentialInterpolation ===================================
         /*
@@ -164,7 +164,9 @@ class utils_TH1
         public:
             TH1_ExponentialInterpolation_static() = delete;
             TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &) = delete;
-    
+            TH1_ExponentialInterpolation_static(std::string const &theIdSuffix);
+            
+            // the only function that creates new TH1_ExponentialInterpolation on heap and stores its pointer in a member map.
             TH1_ExponentialInterpolation_static(std::string const &_id,
                                                 TH1 const         &_th1,
                                                 bool               _integrate,
@@ -184,15 +186,30 @@ class utils_TH1
             std::string const 
                 GetId() const                { return id; } 
             
+            TF1 *InitializeWithHisto(theTH1, 
+                                     theIntegrate, 
+                                     theUseXtimesExp);
+
+
+            
             bool IsInitialized() const;
 
         private:
             
+
             // one of the two ways to create new TF1_globals with write access
-            // creates new TF1 on heap if non existing and theCreateNewIfNecessary == true
+            // creates new TF1 on heap and inserts into map if non existing
+            //_________________________________________________________________________________________________
             TF1 *createNew_TH1_ExponentialInterpolation(TH1 const  &_th1,
                                                         bool        _integrate,
                                                         bool        _useXtimesExp);
+            
+            // creates new TF1 on heap and inserts into map if non existing
+            //_________________________________________________________________________________________________
+            std::pair<TH1 const&, TH1_ExponentialInterpolation*>
+                insertNewExpInterInstance(TH1         const &_th1,
+                                          bool               _integrate,
+                                          bool               _useXtimesExp);
             
 
             // utils_TH1::TH1_ExponentialInterpolation_static data members
