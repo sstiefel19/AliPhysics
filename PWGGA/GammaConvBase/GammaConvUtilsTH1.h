@@ -32,7 +32,7 @@ class utils_TH1
         TF1   &tf1_global;           
         */
         class TH1_ExponentialInterpolation_static;
-        
+
         class TH1_ExponentialInterpolation
         {   
             public:
@@ -116,43 +116,6 @@ class utils_TH1
                 TF1                                *fTF1_global; 
        }; // end class utils_TH1::TH1_ExponentialInterpolation
 
-    public:
-    // ===================== class utils_TH1 ================================================================
-        /*
-            The public interface of class utils_sstiefel/utils_TH1
-        */
-        utils_TH1(std::string const &theId = "utils_TH1_defConstructor");
-
-        ~utils_TH1();
-        
-        utils_TH1(utils_TH1 const &theRef);    
-        
-        /* 
-            get globally defined TF1 which is either fitted to the bin centers 
-            OR such that the integrals in each in bin agree with their content. 
-            
-            if theUseXtimesExp=true: use f(x) = x * exp([0] + [1]*x). 
-            else:                        f(x) =     exp([0] + [1]*x) 
-        */
-        // _________________________________________________________________________________________________ 
-        TF1 *InitGlobalPieceWiseExponentialInterpolationTF1(std::string const &theNewName, 
-                                                            TH1         const &theTH1, 
-                                                            bool               theIntegrate = false,
-                                                            bool               theUseXtimesExp = false); // x*f(x) instead f(x)
-        
-        // _________________________________________________________________________________________________ 
-        bool IsGlobalPieceWiseExponentialInterpolationInitialized() const  
-        {   
-            return static_cast<bool>(fTH1_ExponentialInterpolation_static_instance.IsInitialized());
-        }
-
-    // namespace utils_TH1::
-    private:       
-        std::string                          id;
-
-        // this can hold all exponential interpolations for this instance of utils_TH1
-        TH1_ExponentialInterpolation_static  fTH1_ExponentialInterpolation_static_instance;  
-
     
     // =================== utils_TH1::TH1_ExponentialInterpolation_static ======================================== 
         
@@ -215,5 +178,42 @@ class utils_TH1
                 std::map<TH1 const*, utils_TH1::TH1_ExponentialInterpolation*>  fMap_TH1_ExponentialInterpolation;
         }; // end class utils_TH1::TH1_ExponentialInterpolation_static {
     
+    public:
+    // ===================== class utils_TH1 ================================================================
+        /*
+            The public interface of class utils_sstiefel/utils_TH1
+        */
+        utils_TH1(std::string const &theId = "utils_TH1_defConstructor");
+
+        ~utils_TH1();
+        
+        utils_TH1(utils_TH1 const &theRef);    
+        
+        /* 
+            get globally defined TF1 which is either fitted to the bin centers 
+            OR such that the integrals in each in bin agree with their content. 
+            
+            if theUseXtimesExp=true: use f(x) = x * exp([0] + [1]*x). 
+            else:                        f(x) =     exp([0] + [1]*x) 
+        */
+        // _________________________________________________________________________________________________ 
+        TF1 *InitGlobalPieceWiseExponentialInterpolationTF1(std::string const &theNewName, 
+                                                            TH1         const &theTH1, 
+                                                            bool               theIntegrate = false,
+                                                            bool               theUseXtimesExp = false); // x*f(x) instead f(x)
+        
+        // _________________________________________________________________________________________________ 
+        bool IsGlobalPieceWiseExponentialInterpolationInitialized() const  
+        {   
+            return static_cast<bool>(fTH1_ExponentialInterpolation_static_instance.IsInitialized());
+        }
+
+    // namespace utils_TH1::
+    private:       
+        std::string                          id;
+
+        // this can hold all exponential interpolations for this instance of utils_TH1
+        TH1_ExponentialInterpolation_static  fTH1_ExponentialInterpolation_static_instance;  
+
 }; //  end class utils_TH1
  
