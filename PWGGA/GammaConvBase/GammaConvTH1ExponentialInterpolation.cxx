@@ -210,9 +210,13 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
     size_t lNumberOfInsertions = 0;
     for (size_t iBin = 1; iBin <= nBinsX; ++iBin){
         double x = theTH1.GetBinCenter(iBin);
-        theGlobalTF1.Eval(x); // this creates one local function per bin and stores it in fVector
-printf("SFS line 214 case all good x = %f, iBin = %d\n",
-       x, iBin);
+
+        // this creates one local function per bin and stores it in fVector
+        theGlobalTF1.Eval(x);
+        printf("SFS line 214 case all good x = %f, iBin = %zu\n",
+               x, 
+               iBin);
+    
         TF1 *lTF1_candidate = nullptr;
         if (iBin <= fVector_tf1_local.size()){
             printf("SFS line 217 case all good\n");
@@ -312,60 +316,62 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     }
 
     // try to get local tf1 from vector
-    bool isInRangeOfHisto = lBin <= fVector_tf1_local.size();
-    // auto  *lTF1_local_good = isInRangeOfHisto 
-    //     ?   &fVector_tf1_local[lBin]
-    //     :   static_cast<TF1*>(nullptr);
-    auto  *lTF1_local_good = isInRangeOfHisto 
-        ?   GetNewLocalExponentialTF1(fTH1, *x, fIntegrate, fUseXtimesExp)
-        :   static_cast<TF1*>(nullptr);
+    auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
+    bool isInRangeOfHisto = lIt_vecBin_i != fVector_tf1_local.end();
+
+    size_t lDiff = (lBin - fVector_tf1_local.size());
+    bool canInsertAtBack = lDiff == 1;
     
-    if (lTF1_local_good){
-        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
-               "\templacing new lTF1_local_good in ");
+    TF1 *lTF1_local_good = nullptr;
+    bool wasObtainedFromCache = false;
+    if (isInRangeOfHisto){
+        // this means there is alrady an existing local TF1. Note that the vector will be comletely empty when called from initGlobalFunctionObject
+        lTF1_local_good = &fVector_tf1_local.at(lBin);
+        wasObtainedFromCache = true;
+    } else if (canInsertAtBack){
+
+        // this should call copy constructor on the new TF1 returned by GetNewLocalExponentialTF1
+        TF1 *lTF1_temp = GetNewLocalExponentialTF1(fTH1, 
+                                                   *x, 
+                                                   fIntegrate, 
+                                                   fUseXtimesExp);
+        if (lTF1_temp) {
+            lTF1_local_good = &fVector_tf1_local.emplace_back(*lTF1_temp);
+            if (lTF1_local_good != lTF1_temp){
+                printf("INFO: Copy constructor was called as assumend. Deleting lTF1_temp.\n");
+                delete lTF1_temp;
+            } else {
+                printf("INFO: Strange: Copy constructor was NOT called as assumend. NOT deleting lTF1_temp.\n");
+            }           
+        } else {
+            printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                    "\tGetNewLocalExponentialTF1() returned nullptr. This Evaluate call will return 0. later.\n",
+                   id.data());
+        }
+
+    } else {
+        printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                "\tCan not insert new TF1 local for bin %d because current size of vector is %zu\n"
+                "\tThis will return 0. later\n.",
+               id.data(),
+              lBin,
+              fVector_tf1_local.size());
     }
 
-
-    printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
-            "\t x = %f, lBin = %zu, lTF1_local_good = %p, found existing lTF1_local_good ? %s.\n", 
-           id.data(),
-           *x,
-           lBin,
-           lTF1_local_good,
-           lTF1_local_good ? "yes" : "no");
-
-    // (re)insert if necessary
-    if (isInRangeOfHisto){   
-        
-        // this creates a new TF1 on HEAP!     
-        lTF1_local_good = GetNewLocalExponentialTF1(fTH1, 
-                                                    *x,
-                                                    fIntegrate,
-                                                    fUseXtimesExp);  
-        if (lTF1_local_good){
-            auto lBin_it = fVector_tf1_local.begin() + lBin;
-            fVector_tf1_local.erase(lBin_it);            
-            auto lEmplace_it = fVector_tf1_local.emplace(lBin_it, *lTF1_local_good);
-            if (lEmplace_it == fVector_tf1_local.end()){
-                printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
-                        "\templace after erase was not sucuessfull.. Returning 0.\n",
-                        id.data());
-            } 
-        } 
-        else {
-            printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
-                        "\tCreation of a working lTF1_local_good was not successfull. Returning 0.\n",
-                        id.data());
-        }            
-    } // done checking all conditions and pointers
-    
-    printf("dumping lTF1_local_good:\n");
     if (lTF1_local_good){
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
+                "\t x = %f, lBin = %zu, lTF1_local_good = %p, was obtained from cache ? %s.\n", 
+            id.data(),
+            *x,
+            lBin,
+            lTF1_local_good,
+            wasObtainedFromCache ? "yes" : "no");
+        printf("dumping lTF1_local_good:\n");
         lTF1_local_good->Dump();
+        printf("done dumping lTF1_local_good:\n");
+        lResultValue = TF1_local_good->Eval(*x);
     }
-    printf("done dumping lTF1_local_good:\n");
-    
-    lResultValue = lTF1_local_good ? lTF1_local_good->Eval(*x) : 0.;
+
     if (!lResultValue){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
                 "\t returning lResultValue = %f\n",
