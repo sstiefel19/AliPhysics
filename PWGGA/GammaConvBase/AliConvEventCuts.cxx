@@ -7243,8 +7243,6 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
     checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||  
     checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD", true /*theWarn*/);
   
-  isReturnEarly |= checkPointer(lGenHeaders, "lGenHeaders");
-
   if (isReturnEarly) {
     return;
   }
@@ -7252,6 +7250,8 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
   TList *lGenHeaders = isAOD 
       ? lCocktailHeaderAOD->GetCocktailHeaders()
       : lCocktailHeaderESD->GetHeaders();
+
+  isReturnEarly |= checkPointer(lGenHeaders, "lGenHeaders");
 
   if (fDebugLevel > 0 ) cout << "event starts here" << endl;
 
