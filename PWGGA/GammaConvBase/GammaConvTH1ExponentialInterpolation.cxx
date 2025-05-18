@@ -284,7 +284,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
     bool isInRangeOfHisto = lIt_vecBin_i != fVector_tf1_local.end();
 
-    bool canInsertAtBack = lBin < nBinsX;
+    bool canInsertAtBack = lBin < fTH1.GetNbinsX();
     
     TF1 *lTF1_local_good = nullptr;
     bool wasObtainedFromCache = false;
