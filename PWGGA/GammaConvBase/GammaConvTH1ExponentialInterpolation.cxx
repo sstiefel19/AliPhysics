@@ -203,11 +203,7 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
             "\tNo need for calling initGlobalFunctionObject() for this global TF1. It is already full initialized. Returning early.\n",
            id.data(), 
-           theGlobalTF1.GetName(), 
-           theTH1.GetName(), 
-           fIntegrate, 
-           fUseXtimesExp);
-        return true;
+           return true;
     }
 
     fVector_tf1_local.clear();
@@ -307,7 +303,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     } else {
         printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
-                "\tCan not insert new TF1 local for bin %d because current size of vector is %zu\n"
+                "\tCan not insert new TF1 local for bin %zu because current size of vector is %zu\n"
                 "\tThis will return 0. later\n.",
                id.data(),
               lBin,
@@ -325,7 +321,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
         printf("dumping lTF1_local_good:\n");
         lTF1_local_good->Dump();
         printf("done dumping lTF1_local_good:\n");
-        lResultValue = TF1_local_good->Eval(*x);
+        lResultValue = lTF1_local_good->Eval(*x);
     }
 
     if (!lResultValue){
