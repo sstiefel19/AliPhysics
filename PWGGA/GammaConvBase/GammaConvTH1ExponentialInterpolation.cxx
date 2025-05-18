@@ -276,17 +276,31 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
                *x,
                lBin ? "over" : "under",
                fTH1.GetName());
+        return 0.;
     }
 
-    // try to get local tf1 from vector
-    auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
-    bool canInsertAtBack = lBin <= fTH1.GetNbinsX();
-    
-    // bool isInRangeOfHisto = !isUnderOverFlow;
-    
+        
     TF1 *lTF1_local_good = nullptr;
     bool wasObtainedFromCache = false;
-    if (static_cast<size_t>(lBin) < fVector_tf1_local.size()){
+    
+    // try to get local tf1 from vector
+    auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
+    bool isBinInVector =  (lBin >= 1) && (static_cast<size_t>(lBin) <= fVector_tf1_local.size());
+    
+    bool canInsertAtBack = !isBinInVector && (lBin == fVector_tf1_local.size());
+    if (!(isBinInVector || canInsertAtBack)){
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                "\tcalled for x = %f, lBin = %d\n. This is outside the histos range. Returning 0 here.\n",
+               id.data(),
+               *x,
+               lBin,
+               fTH1.GetName(),
+               fTH1.GetXaxis()->GetXmin(),
+               fTH1.GetXaxis()->GetXmax());
+        return 0.;
+    }
+
+    if (isBinInVector ){
         // this means there is alrady an existing local TF1. Note that the vector will be comletely empty when called from initGlobalFunctionObject
         lTF1_local_good = &fVector_tf1_local.at(static_cast<size_t>(lBin));
         wasObtainedFromCache = true;
