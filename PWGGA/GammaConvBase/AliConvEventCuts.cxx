@@ -7170,8 +7170,8 @@ TString AliConvEventCuts::GetCutNumber(){
 void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderList, AliVEvent *event){
 
   // return false for nullptr
-  auto checkPointer = [&](TObject *thePointer, std::string const &theName){
-    if (!(thePointer)){
+  auto checkPointer = [&](TObject *thePointer, std::string const &theName, bool theWarn = false){
+    if (!thePointer && theWarn){
       AliWarning(Form("Pointer %s is zero for AliVEvent = %p . Returning early.\n", 
                       theName.data(), event));
       return true;
@@ -7203,7 +7203,7 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
   
   bool isReturnEarly = 
     checkPointer(lAODMCParticleClonesArray,"lAODMCParticleClonesArray") ||
-    checkPointer(lMCEvent, "lMCEvent");
+    checkPointer(lMCEvent, "lMCEvent", true /*theWarn*/);
 
   AliAODMCHeader *lCocktailHeaderAOD = isAOD 
       ?   dynamic_cast<AliAODMCHeader*>(event->FindListObject(AliAODMCHeader::StdBranchName()))
@@ -7215,7 +7215,7 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
   
   isReturnEarly |= 
     checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||  
-    checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD");
+    checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD", true /*theWarn*/);
   
   TList *lGenHeaders = isAOD 
     ?   lCocktailHeaderAOD->GetCocktailHeaders()
