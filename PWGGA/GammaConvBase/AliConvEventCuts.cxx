@@ -464,9 +464,9 @@ void AliConvEventCuts::InitCutHistograms(TString name, Bool_t preCut){
     hCountMissingEventInformation = new TH1F(
         "hCountMissingEventInformation", 
         "hCountMissingEventInformation;missing information;counts", 
-        7, 
+        9, 
         0., 
-        6.);
+        8.);
     fHistograms->Add(hCountMissingEventInformation);
   }
 
@@ -7182,21 +7182,18 @@ TString AliConvEventCuts::GetCutNumber(){
 void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderList, AliVEvent *event){
 
   // return false for nullptr
-  auto checkPointer = [&](TObject *thePointer, std::string const theName, bool theWarn = false){
+  auto checkPointer = [&](TObject *thePointer, std::string const theName, bool theWarn = true){
     if (!thePointer && theWarn)
     {
       size_t lCategory = 0;  
-      if (theName == "lAODMCParticleClonesArray"){
-        lCategory = 1;
-      } else if (theName == "lMCEvent") {
-        lCategory = 2;
-      } else if (theName == "lCocktailHeaderAOD") {
-        lCategory = 3;
-      } else if (theName == "lCocktailHeaderESD") {
-        lCategory = 4;
-      } else if (theName == "lGenHeaders") {
-        lCategory = 5;  
-      } 
+      if      (theName == "lAODMCParticleClonesArray") lCategory = 2;
+      else if (theName == "lCocktailHeaderAOD")        lCategory = 3;
+      else if (theName == "lGenHeadersAOD")            lCategory = 4;
+
+      else if (theName == "lMCEvent")                  lCategory = 5;
+      else if (theName == "lCocktailHeaderESD")        lCategory = 6;
+      else if (theName == "lGenHeaders")               lCategory = 7;  
+      
       hCountMissingEventInformation->Fill(lCategory);         
       AliWarning(Form("Item %s is zero for AliVEvent = %p. Returning early.\n", 
                       theName.data(), event));
@@ -7217,44 +7214,52 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
 
   // case AOD
   bool isAOD = event->IsA()==AliAODEvent::Class();
-  TClonesArray *lAODMCParticleClonesArray = isAOD 
-  ?   dynamic_cast<TClonesArray*>(event->FindListObject(AliAODMCParticle::StdBranchName()))
-  :   static_cast<TClonesArray*>(nullptr);
-
-  // case ESD
   bool isESD = event->IsA()==AliMCEvent::Class();
-  AliMCEvent *lMCEvent  = isESD
-    ? dynamic_cast<AliMCEvent*>(event) 
-    : static_cast<AliMCEvent*>(nullptr); 
-  
-  bool isReturnEarly = 
-    checkPointer(lAODMCParticleClonesArray,"lAODMCParticleClonesArray") ||
-    checkPointer(lMCEvent, "lMCEvent", true /*theWarn*/);
 
-  AliAODMCHeader *lCocktailHeaderAOD = isAOD 
-      ?   dynamic_cast<AliAODMCHeader*>(event->FindListObject(AliAODMCHeader::StdBranchName()))
-      :   static_cast<AliAODMCHeader*>(nullptr);
-
-  AliGenCocktailEventHeader *lCocktailHeaderESD = isESD
-    ?  dynamic_cast<AliGenCocktailEventHeader*>(dynamic_cast<AliMCEvent*>(event)->GenEventHeader())
-    :  static_cast<AliGenCocktailEventHeader*>(nullptr);
-  
-  isReturnEarly |= isAOD
-    ?  checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||  
-    :  checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD", true /*theWarn*/);
-
-  TList *lGenHeaders = isAOD 
-      ? lCocktailHeaderAOD->GetCocktailHeaders()
-      : lCocktailHeaderESD->GetHeaders();
-
-  isReturnEarly |= (isAOD && isESD)
-    ?  checkPointer(lGenHeaders, "lGenHeaders")
-    :  true;     
-  
-  if (isReturnEarly) {
+  if (!(isAOD || isESD)){
+    printf("FATAL: AliConvEventCuts::GetNotRejectedParticles(): Neither AOD nor ESD. Returning early.\n");
+    hCountMissingEventInformation->Fill(1);         
     return;
   }
-  // checks done
+
+  bool isReturnEarly = false;
+  TList *lGenHeaders = nullptr; 
+
+  if (isAOD){
+    TClonesArray *lAODMCParticleClonesArray = dynamic_cast<TClonesArray*>(
+        event->FindListObject(AliAODMCParticle::StdBranchName()));
+
+    AliAODMCHeader *lCocktailHeaderAOD = dynamic_cast<AliAODMCHeader*>(
+        event->FindListObject(AliAODMCHeader::StdBranchName()));
+
+    lGenHeaders = lCocktailHeaderAOD->GetCocktailHeaders()
+
+    isReturnEarly = checkPointer(lAODMCParticleClonesArray,"lAODMCParticleClonesArray") ||
+                    checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||
+                    checkPointer(lGenHeaders, "lGenHeadersAOD");
+  }
+  
+  bool isESD = event->IsA()==AliMCEvent::Class();
+  if (isESD){
+    AliMCEvent *lMCEvent = dynamic_cast<AliMCEvent*>(event); 
+    
+    AliGenCocktailEventHeader *lCocktailHeaderESD = dynamic_cast<AliGenCocktailEventHeader*>(
+      dynamic_cast<AliMCEvent*>(event)->GenEventHeader());
+
+    lGenHeaders = lCocktailHeaderESD && lCocktailHeaderESD->GetHeaders();
+
+    isReturnEarly = checkPointer(lMCEvent, "lMCEvent") || 
+                    checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD") ||
+                    checkPointer(lGenHeaders, "lGenHeadersESD");
+  }
+
+  if (isReturnEarly){
+    printf("FATAL: AliConvEventCuts::GetNotRejectedParticles(): Header information could not be obtained.\n"
+            "Look at histo hCountMissingEventInformation to see more information. Returning early.\n");
+    return;
+  }
+  
+ // checks done
   
   if (fDebugLevel > 0 ) cout << "event starts here" << endl;
 
