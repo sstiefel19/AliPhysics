@@ -7182,7 +7182,7 @@ TString AliConvEventCuts::GetCutNumber(){
 void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderList, AliVEvent *event){
 
   // return false for nullptr
-  auto checkPointer = [&](TObject *thePointer, std::string const &theName, bool theWarn = false){
+  auto checkPointer = [&](TObject *thePointer, std::string const theName, bool theWarn = false){
     if (!thePointer && theWarn)
     {
       size_t lCategory = 0;  
