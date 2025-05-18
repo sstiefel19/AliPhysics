@@ -284,11 +284,12 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     bool wasObtainedFromCache = false;
     
     // try to get local tf1 from vector
-    auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
+    // auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
     bool isBinInVector =  (lBin >= 1) && (static_cast<size_t>(lBin) <= fVector_tf1_local.size());
-    
-    bool canInsertAtBack = !isBinInVector && (lBin == fVector_tf1_local.size());
-    if (!(isBinInVector || canInsertAtBack)){
+    //                                         2     
+    bool canInsertAtBack = !isBinInVector && (lBin == (fVector_tf1_local.size() + 1));
+    bool canProceed = isBinInVector || canInsertAtBack;
+    if (!canProceed){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
                 "\tcalled for x = %f, lBin = %d\n. This is outside the histos range. Returning 0 here.\n",
                id.data(),
