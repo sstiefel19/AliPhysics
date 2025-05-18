@@ -323,16 +323,15 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     }
 
     if (lTF1_local_good){
+        /* 
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
                 "\t x = %f, lBin = %d, lTF1_local_good = %p, was obtained from cache ? %s.\n", 
             id.data(),
             *x,
             lBin,
             lTF1_local_good,
-            wasObtainedFromCache ? "yes" : "no");
-        // printf("dumping lTF1_local_good:\n");
-        // lTF1_local_good->Dump();
-        // printf("done dumping lTF1_local_good:\n");
+            wasObtainedFromCache ? "yes" : "no"); 
+        */
         lResultValue = lTF1_local_good->Eval(*x);
     }
 
