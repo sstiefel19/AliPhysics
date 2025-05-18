@@ -163,10 +163,10 @@ class utils_TH1
                 
                 // creates new TF1 on heap and inserts into map if non existing
                 //_________________________________________________________________________________________________
-                std::pair<TH1 const&, TH1_ExponentialInterpolation*>
+                std::pair<TH1 const*, TH1_ExponentialInterpolation*>
                     insertNewExpInterInstance(TH1         const &_th1,
-                                            bool               _integrate,
-                                            bool               _useXtimesExp);
+                                              bool               _integrate,
+                                              bool               _useXtimesExp);
                 
 
                 // utils_TH1::TH1_ExponentialInterpolation_static data members

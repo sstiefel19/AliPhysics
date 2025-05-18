@@ -447,7 +447,7 @@ utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_sta
 */
 
 //_________________________________________________________________________________________________
-std::pair<TH1 const&, utils_TH1::TH1_ExponentialInterpolation*>
+std::pair<TH1 const*, utils_TH1::TH1_ExponentialInterpolation*>
     utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance(TH1         const &_th1,
                                                                               bool               _integrate,
                                                                               bool               _useXtimesExp)
@@ -461,8 +461,9 @@ std::pair<TH1 const&, utils_TH1::TH1_ExponentialInterpolation*>
     if (lIt_found != fMap_TH1_ExponentialInterpolation.end()){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance(): instance %s"
                 "Found element for TH1 %s in map. Will return an iterator to the element.\n",
+                id.data(),
                _th1.GetName());
-        return lIt_found;
+        return lIt_found->second;
     }
 
    utils_TH1::TH1_ExponentialInterpolation *lTH1_ExpInter_Instance_ptr = new utils_TH1::TH1_ExponentialInterpolation(
