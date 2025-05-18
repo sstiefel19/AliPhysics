@@ -460,7 +460,7 @@ void AliConvEventCuts::InitCutHistograms(TString name, Bool_t preCut){
     fHistograms->Add(hReweightMCHistGamma);
   }
 
-  if (ptweightson){
+  if (hReweightMCHistPi0_inv || hReweightMCHistEta_inv){
     hCountMissingEventInformation = new TH1F("hCountMissingEventInformation", "hCountMissingEventInformation;missing information;counts", );
     fHistograms->Add(hCountMissingEventInformation);
   }
