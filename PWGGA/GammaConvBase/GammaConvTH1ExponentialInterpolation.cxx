@@ -196,6 +196,21 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
            fUseXtimesExp);
 
     size_t nBinsX = theTH1.GetNbinsX();
+    size_t nBinsXplus2 = nBinsX + 2;
+
+    bool isAlreadyFullyInitialized = fVector_tf1_local.size() + nBinsXplus2;
+    if (isAlreadyFullyInitialized){
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
+            "\tNo need for calling initGlobalFunctionObject() for this global TF1. It is already full initialized. Returning early.\n",
+           id.data(), 
+           theGlobalTF1.GetName(), 
+           theTH1.GetName(), 
+           fIntegrate, 
+           fUseXtimesExp);
+        return true;
+    }
+
+    fVector_tf1_local.clear();
 
     // enter 0 function for underflow bin
     fVector_tf1_local.emplace_back(   
@@ -207,66 +222,14 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
         0
     );
     
-    size_t lNumberOfInsertions = 0;
     for (size_t iBin = 1; iBin <= nBinsX; ++iBin){
         double x = theTH1.GetBinCenter(iBin);
 
         // this creates one local function per bin and stores it in fVector
         theGlobalTF1.Eval(x);
-        printf("SFS line 214 case all good x = %f, iBin = %zu\n",
+        printf("SFS line 216 case all good x = %f, iBin = %zu\n",
                x, 
                iBin);
-    
-        TF1 *lTF1_candidate = nullptr;
-        if (iBin <= fVector_tf1_local.size()){
-            printf("SFS line 217 case all good\n");
-            lTF1_candidate = fVector_tf1_local[iBin];
-        }
-        else {
-            lTF1_candidate = utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(
-                theTH1, 
-                x, 
-                fIntegrate, 
-                fUseXtimesExp);
-        }
-        TF1 *lTF1_local_good = (lTF1_candidate && TF1GoodForX(*lTF1_candidate, x))
-            ?   lTF1_candidate
-            :   static_cast<TF1*>(nullptr);
-        
-        if (lTF1_local_good){
-            // all good
-            printf("SFS line 232 case all good\n");
-            fVector_tf1_local.emplace_back(*lTF1_local_good);
-            delete lTF1_local_good;
-            ++lNumberOfInsertions;
-        } else {    
-            // try here explicitly
-            printf("WARNING: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(): instance id: %s\n"
-                    "\tFor some reason the automatic initialization through Eval() did not work!\n",
-                    id.data());
-
-            TF1 *lTF1_local_new = GetNewLocalExponentialTF1(fTH1, 
-                                                            x,
-                                                            fIntegrate,
-                                                            fUseXtimesExp);
-            if (!lTF1_local_new){
-                printf("WARNING: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(): instance id: %s\n"
-                       "\tThrough GetNewLocalExponentialTF1() did return nullptr. Returning nullptr.\n",
-                       id.data());
-                return false;
-            }
-
-            printf("INFO: TF1 *utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject():\n"
-                    "\tiBin: %zu x = %f: Added %s to map.\n",
-                   iBin, 
-                   x, 
-                   lTF1_local_good->GetName());
-            
-            // this should create a copy in place, so I delete the old instance
-            fVector_tf1_local.emplace_back(*lTF1_local_new); 
-            delete lTF1_local_new;
-            ++lNumberOfInsertions;                        
-        }
     }
 
     // enter 0 function for overflow bin
@@ -279,20 +242,13 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
                                         0
                                     );
 
-
-    fTF1_global = &theGlobalTF1;
-    bool isFullyInitializedNow = lNumberOfInsertions == nBinsX;
-
-    bool wasAlreadyFullyInitialized = !lNumberOfInsertions;
-    if (lNumberOfInsertions){
+    bool isFullyInitializedNow = fVector_tf1_local.size() == nBinsXplus2;
+    if (isFullyInitializedNow){
         printf("utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
-                 "\tInserted new local TF1s for %zu out of %zu bins. Instance was %s initialized.\n",
-               id.data(), 
-               lNumberOfInsertions, 
-               nBinsX, 
-               wasAlreadyFullyInitialized
-                   ?   "already fully"
-                   :   "not");   
+            "\tfVector_tf1_local.size() = %zu, theTH1.GetNbinsX() = %zu\n",
+        id.data(), 
+        fVector_tf1_local.size(), 
+        nBinsX);   
     }
     return isFullyInitializedNow;
 }
