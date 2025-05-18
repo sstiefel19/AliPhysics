@@ -82,23 +82,22 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
     TAxis const &lAxis = *theTH1.GetXaxis();   
 
     // we cant fit the histogram in the 0th bin
-    int const iLeftBinMin = 1; // std::min(lAxis.GetNbins(), iLeftBin + 1);
-    int const iRightBinMax = lAxis.GetNbins(); // std::min(lAxis.GetNbins(), iLeftBin + 1);
+    int const iLeftBinMin = 1;
+    int const iRightBinMax = lAxis.GetNbins();
 
     int const iLeftBin = (iLeftBin == iRightBinMax) 
         ?    iRightBinMax - 1
         :    std::max(lAxis.FindBin(theX), iLeftBinMin);
     
-    int const iRightBin = iLeftBin + 1 //(iLeftBin == 1)
+    int const iRightBin = iLeftBin + 1;
     
     printf("found bins: iLeftBin = %d, iRightBin = %d\n",
            iLeftBin, iRightBin);
     
     double xmin = lAxis.GetBinLowEdge(iLeftBin);
     double xmax = lAxis.GetBinUpEdge(iRightBin);
-    // std::pair<double, double> lRange_edgeToEdge( 
-    //     { lAxis.GetBinLowEdge(iLeftBin),  });    
-    printf("line93\n");
+
+    printf("line100\n");
 
     double cl = lAxis.GetBinCenter(iLeftBin);
     double cr = lAxis.GetBinCenter(iRightBin);
