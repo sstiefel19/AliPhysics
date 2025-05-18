@@ -7232,21 +7232,24 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
     AliAODMCHeader *lCocktailHeaderAOD = dynamic_cast<AliAODMCHeader*>(
         event->FindListObject(AliAODMCHeader::StdBranchName()));
 
-    lGenHeaders = lCocktailHeaderAOD->GetCocktailHeaders()
+    lGenHeaders = lCocktailHeaderAOD 
+      ?  lCocktailHeaderAOD->GetCocktailHeaders()
+      :  static_cast<TList*>(nullptr);
 
     isReturnEarly = checkPointer(lAODMCParticleClonesArray,"lAODMCParticleClonesArray") ||
                     checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||
                     checkPointer(lGenHeaders, "lGenHeadersAOD");
   }
   
-  bool isESD = event->IsA()==AliMCEvent::Class();
   if (isESD){
     AliMCEvent *lMCEvent = dynamic_cast<AliMCEvent*>(event); 
     
     AliGenCocktailEventHeader *lCocktailHeaderESD = dynamic_cast<AliGenCocktailEventHeader*>(
       dynamic_cast<AliMCEvent*>(event)->GenEventHeader());
 
-    lGenHeaders = lCocktailHeaderESD && lCocktailHeaderESD->GetHeaders();
+    lGenHeaders = lCocktailHeaderESD 
+      ?  lCocktailHeaderESD->GetHeaders()
+      :  static_cast<TList*>(nullptr);
 
     isReturnEarly = checkPointer(lMCEvent, "lMCEvent") || 
                     checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD") ||
