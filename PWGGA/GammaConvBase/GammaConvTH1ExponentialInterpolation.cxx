@@ -282,11 +282,11 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     auto lIt_vecBin_i =  fVector_tf1_local.begin() + lBin;  
     bool canInsertAtBack = lBin <= fTH1.GetNbinsX();
     
-    bool isInRangeOfHisto = !isUnderOverFlow;
+    // bool isInRangeOfHisto = !isUnderOverFlow;
     
     TF1 *lTF1_local_good = nullptr;
     bool wasObtainedFromCache = false;
-    if (isInRangeOfHisto){
+    if (static_cast<size_t>(lBin) < fVector_tf1_local.size()){
         // this means there is alrady an existing local TF1. Note that the vector will be comletely empty when called from initGlobalFunctionObject
         lTF1_local_good = &fVector_tf1_local.at(static_cast<size_t>(lBin));
         wasObtainedFromCache = true;
@@ -310,14 +310,14 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
                     "\tGetNewLocalExponentialTF1() returned nullptr. This Evaluate call will return 0. later.\n",
                    id.data());
         }
-
     } else {
-        printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
-                "\tThe requested x = %f corresponds to bin number %d which is greater than fTH1.GetNbinsX() = %d.\n"
+        printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
+                "\tThe requested x = %f corresponds to the overflow bin number or even higher.\n"
+                "\tfTH1.GetNbinsX() = %d, fVector_tf1_local.size() = %zu.\n"
                 "\tWon't insert new function. This will return 0 later.\n",
               id.data(),
               *x,
-              lBin,
+              fTH1.GetNbinsX(),
               fVector_tf1_local.size());
     }
 
