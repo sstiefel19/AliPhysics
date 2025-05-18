@@ -201,9 +201,9 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
     bool isAlreadyFullyInitialized = fVector_tf1_local.size() + nBinsXplus2;
     if (isAlreadyFullyInitialized){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
-            "\tNo need for calling initGlobalFunctionObject() for this global TF1. It is already full initialized. Returning early.\n",
-           id.data(), 
-           return true;
+                "\tNo need for calling initGlobalFunctionObject() for this global TF1. It is already full initialized. Returning early.\n",
+               id.data());
+        return true;
     }
 
     fVector_tf1_local.clear();
