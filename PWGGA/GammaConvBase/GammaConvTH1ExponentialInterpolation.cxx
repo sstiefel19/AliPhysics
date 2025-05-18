@@ -198,7 +198,7 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
     size_t nBinsX = theTH1.GetNbinsX();
     size_t nBinsXplus2 = nBinsX + 2;
 
-    bool isAlreadyFullyInitialized = fVector_tf1_local.size() + nBinsXplus2;
+    bool isAlreadyFullyInitialized = fVector_tf1_local.size() == nBinsXplus2;
     if (isAlreadyFullyInitialized){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
                 "\tNo need for calling initGlobalFunctionObject() for this global TF1. It is already full initialized. Returning early.\n",
