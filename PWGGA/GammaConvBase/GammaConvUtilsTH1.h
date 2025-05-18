@@ -74,9 +74,9 @@ class utils_TH1
                 std::string const 
                     GetId() const                { return id; } 
                 
-                TF1 *InitializeWithHisto(theTH1, 
-                                        theIntegrate, 
-                                        theUseXtimesExp);
+                TF1 *InitializeWithHisto(TH1 const  &theTH1, 
+                                         bool        theIntegrate, 
+                                         bool        theUseXtimesExp);
                 
                 bool IsInitialized() const;
         
@@ -113,7 +113,7 @@ class utils_TH1
         // this can hold all exponential interpolations for this instance of utils_TH1
         TH1_ExponentialInterpolation_static  fTH1_ExponentialInterpolation_static_instance; 
 
-        
+
     // ===================== class utils_TH1::TH1_ExponentialInterpolation ===================================
         /*
         Main class for exponential interpolations of TH1 histograms
