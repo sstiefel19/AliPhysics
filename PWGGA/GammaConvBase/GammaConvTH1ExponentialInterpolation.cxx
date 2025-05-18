@@ -85,14 +85,16 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
     int const iLeftBinMin = 1;
     int const iRightBinMax = lAxis.GetNbins();
 
-    int const iLeftBin = (iLeftBin == iRightBinMax) 
-        ?    iRightBinMax - 1
-        :    std::max(lAxis.FindBin(theX), iLeftBinMin);
+    int const iBinHisto = lAxis.FindBin(theX);
+
+    int const iLeftBin = (iBinHisto == iRightBinMax)
+        ?    iRightBinMax - 1                            // upper edge case
+        :    std::max(iBinHisto, iLeftBinMin); // normal case
     
     int const iRightBin = iLeftBin + 1;
     
-    printf("found bins: iLeftBin = %d, iRightBin = %d\n",
-           iLeftBin, iRightBin);
+    printf("found bins: iBinHisto = %d, iLeftBin = %d, iRightBin = %d\n",
+           iBinHisto, iLeftBin, iRightBin);
     
     double xmin = lAxis.GetBinLowEdge(iLeftBin);
     double xmax = lAxis.GetBinUpEdge(iRightBin);
