@@ -86,9 +86,11 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
     int const iRightBinMax = lAxis.GetNbins();
 
     int const iBinHisto = lAxis.FindBin(theX);
+    bool isEdgeLeft  = (iBinHisto == iLeftBinMin);
+    bool isEdgeRight = (iBinHisto == iRightBinMax);
 
-    int const iLeftBin = (iBinHisto == iRightBinMax)
-        ?    iRightBinMax - 1                            // upper edge case
+    int const iLeftBin = isEdgeRight
+        ?    iRightBinMax - 1                  // upper edge case
         :    std::max(iBinHisto, iLeftBinMin); // normal case
     
     int const iRightBin = iLeftBin + 1;
@@ -98,23 +100,10 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
     
     double xmin = lAxis.GetBinLowEdge(iLeftBin);
     double xmax = lAxis.GetBinUpEdge(iRightBin);
+ 
+    printf("line102\n");
 
-    printf("line100\n");
-
-    double cl = lAxis.GetBinCenter(iLeftBin);
-    double cr = lAxis.GetBinCenter(iRightBin);
-
-    double rangeMin = theIntegrate
-        ?   xmin
-        :   cl;
-    
-    double rangeMax = theIntegrate
-        ?   xmax
-        :   cr;
-    
-    printf("line106\n");
-
-    std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d", 
+    std::string lFunctionName(Form("TF1_%s_localExponential%s%s_bins_%d-%d-%d%s", 
                                    theTH1.GetName(),
                                    theUseXtimesExp 
                                        ?    "_*x" 
@@ -122,19 +111,26 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
                                    theIntegrate 
                                        ?    "fitted_w/_int_cond" 
                                        :    "calc_analyt_through_bin_centers",
+                                   iBinHisto, 
                                    iLeftBin,
-                                   iRightBin));
+                                   iRightBin,
+                                   isEdgeLeft 
+                                     ?  "_el"
+                                     : isEdgeRight
+                                       ? "_er"
+                                       : ""));
 
     printf("Will create new TF1 with name = %s in range [ %f - %f |\n",
            lFunctionName.data(),
-           rangeMin,
-           rangeMax);
+           xmin,
+           xmax);
     
     TF1 *lResult = new TF1(lFunctionName.data(),
                            Form("%sexpo(0)", 
                                 theUseXtimesExp ? "x*" : ""),  // = [x*] exp([0] + [1]*x) 
-                           rangeMin,
-                           rangeMax);
+                           xmin,
+                           xmax);
+                           
     printf("line129 lResult = %p\n", lResult);    
     if (!lResult){
         printf("no lResult, returning nullptr.\n");
@@ -146,14 +142,14 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
         theTH1.Fit(lResult, 
                     lFitOptions.append(theIntegrate ? "I" : "").data(), 
                     "" /* global fit options I believe */, 
-                    rangeMin, 
-                    rangeMax);
-        lResult->SetRange(rangeMin, rangeMax);
+                    xmin, 
+                    xmax);
+        lResult->SetRange(xmin, xmax);
     } 
      // dont integrate, use bin contents
     else { // dont integrate, use bin contents
-        double x1 = rangeMin;
-        double x2 = rangeMax;
+        double x1 = xmin;
+        double x2 = xmax;
         double y1 = theTH1.GetBinContent(iLeftBin);
         double y2 = theTH1.GetBinContent(iRightBin);
 
@@ -172,6 +168,8 @@ TF1 *utils_TH1::TH1_ExponentialInterpolation::GetNewLocalExponentialTF1(TH1    &
         double b = TMath::Log(y2/y1) / (x2-x1);
         double a = TMath::Log(y1) - b*x1;
         lResult->SetParameters(a,b);
+        lResult->SetRange(lAxis.GetBinCenter(iLeftBin), 
+                          lAxis.GetBinCenter(iRightBin));
     } // end don't integrate, use bin contents
     printf("SFS line 169: lResult = %p\n", lResult);
     return lResult;
