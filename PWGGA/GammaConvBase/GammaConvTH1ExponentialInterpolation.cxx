@@ -272,7 +272,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     bool isInRangeOfHisto = lIt_vecBin_i != fVector_tf1_local.end();
 
     size_t lDiff = (lBin - fVector_tf1_local.size());
-    bool canInsertAtBack = lDiff == 1;
+    bool canInsertAtBack = !static_cast<bool>(lDiff);
     
     TF1 *lTF1_local_good = nullptr;
     bool wasObtainedFromCache = false;
