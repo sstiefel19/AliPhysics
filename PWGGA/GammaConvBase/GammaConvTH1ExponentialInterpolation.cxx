@@ -222,10 +222,12 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
         double x = theTH1.GetBinCenter(iBin);
 
         // this creates one local function per bin and stores it in fVector
-        theGlobalTF1.Eval(x);
-        printf("SFS line 216 case all good x = %f, iBin = %zu\n",
+        double y = theGlobalTF1.Eval(x);
+        printf("SFS line 216 case all good: iBin = %zu, x = %f, y = %f, size vector = %zu\n",
+               iBin,
                x, 
-               iBin);
+               y,
+               fVector_tf1_local.size());
     }
 
     // enter 0 function for overflow bin
@@ -237,6 +239,8 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
                                         theTH1.GetXaxis()->GetBinLowEdge(1),
                                         0
                                     );
+    printf("SFS line 242 case all good: size vector = %zu\n",
+           fVector_tf1_local.size());
 
     bool isFullyInitializedNow = fVector_tf1_local.size() == nBinsXplus2;
     if (isFullyInitializedNow){
