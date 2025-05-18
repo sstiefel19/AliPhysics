@@ -122,7 +122,7 @@ class utils_TH1
         //  Static base class to maintain a map over all existing utils_TH1::TH1_ExponentialInterpolations
         class TH1_ExponentialInterpolation_static {
             public:
-                TH1_ExponentialInterpolation_static() = delete;
+                TH1_ExponentialInterpolation_static();
                 TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &theRef);
                 TH1_ExponentialInterpolation_static(std::string const &theIdSuffix);
                 

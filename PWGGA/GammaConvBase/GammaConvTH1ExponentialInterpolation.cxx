@@ -404,6 +404,16 @@ bool utils_TH1::TH1_ExponentialInterpolation::TF1GoodForX(TF1 const  &theTF1,
 Static base class to maintain a map over all existing utils_TH1::TH1_ExponentialInterpolations
 */
 //_________________________________________________________________________________________________
+utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static()
+:    id(Form("TH1_ExponentialInterpolation_static_default")),
+     fMap_TH1_ExponentialInterpolation()
+{
+    printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::(): Default constructor called.\n"
+            "\tCreated Instance. %s\n",
+            id.data());
+}
+
+//_________________________________________________________________________________________________
 utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(std::string const &theIdSuffix)
 :    id(Form("TH1_ExponentialInterpolation_static_%s", theIdSuffix.data())),
      fMap_TH1_ExponentialInterpolation()
