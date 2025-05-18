@@ -7198,7 +7198,7 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
         lCategory = 5;  
       } 
       hCountMissingEventInformation->Fill(lCategory);         
-      AliWarning(Form("Pointer %s is zero for AliVEvent = %p . Returning early.\n", 
+      AliWarning(Form("Item %s is zero for AliVEvent = %p. Returning early.\n", 
                       theName.data(), event));
       return true;
     }
@@ -7239,20 +7239,23 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
     ?  dynamic_cast<AliGenCocktailEventHeader*>(dynamic_cast<AliMCEvent*>(event)->GenEventHeader())
     :  static_cast<AliGenCocktailEventHeader*>(nullptr);
   
-  isReturnEarly |= 
-    checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||  
-    checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD", true /*theWarn*/);
-  
-  if (isReturnEarly) {
-    return;
-  }
+  isReturnEarly |= isAOD
+    ?  checkPointer(lCocktailHeaderAOD, "lCocktailHeaderAOD") ||  
+    :  checkPointer(lCocktailHeaderESD, "lCocktailHeaderESD", true /*theWarn*/);
 
   TList *lGenHeaders = isAOD 
       ? lCocktailHeaderAOD->GetCocktailHeaders()
       : lCocktailHeaderESD->GetHeaders();
 
-  isReturnEarly |= checkPointer(lGenHeaders, "lGenHeaders");
-
+  isReturnEarly |= (isAOD && isESD)
+    ?  checkPointer(lGenHeaders, "lGenHeaders")
+    :  true;     
+  
+  if (isReturnEarly) {
+    return;
+  }
+  // checks done
+  
   if (fDebugLevel > 0 ) cout << "event starts here" << endl;
 
   if(lGenHeaders->GetEntries()==1){
