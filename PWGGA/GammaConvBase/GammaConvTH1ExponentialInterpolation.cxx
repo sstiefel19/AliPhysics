@@ -213,17 +213,17 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
 
     fVector_tf1_local.clear();
 
-    // enter 0 function for underflow bin
-    fVector_tf1_local.emplace_back(   
-        "TF1bin0", 
-        "0",  
-        theTH1.GetXaxis()->GetBinLowEdge(1) 
-            - theTH1.GetXaxis()->GetBinWidth(1),
-        theTH1.GetXaxis()->GetBinLowEdge(1),
-        0
-    );
+    // // enter 0 function for underflow bin
+    // fVector_tf1_local.emplace_back(   
+    //     "TF1bin0", 
+    //     "0",  
+    //     theTH1.GetXaxis()->GetBinLowEdge(1) 
+    //         - theTH1.GetXaxis()->GetBinWidth(1),
+    //     theTH1.GetXaxis()->GetBinLowEdge(1),
+    //     0
+    // );
     
-    for (size_t iBin = 1; iBin <= nBinsX; ++iBin){
+    for (size_t iBin = 0; iBin <= nBinsX + 1; ++iBin){
         double x = theTH1.GetBinCenter(iBin);
 
         // this creates one local function per bin and stores it in fVector
@@ -237,22 +237,22 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
     printf("SFS line 232 case all good: size vector = %zu\n",
            fVector_tf1_local.size());
 
-    // enter 0 function for overflow bin
-    std::string lName(Form("TF1bin%zu", nBinsX+1));
-    fVector_tf1_local.emplace_back(lName.data(), 
-                                   "0", 
-                                   theTH1.GetXaxis()->GetBinLowEdge(1) 
-                                       - theTH1.GetXaxis()->GetBinWidth(1),
-                                   theTH1.GetXaxis()->GetBinLowEdge(1),
-                                   0);
+    // // enter 0 function for overflow bin
+    // std::string lName(Form("TF1bin%zu", nBinsX+1));
+    // fVector_tf1_local.emplace_back(lName.data(), 
+    //                                "0", 
+    //                                theTH1.GetXaxis()->GetBinLowEdge(1) 
+    //                                    - theTH1.GetXaxis()->GetBinWidth(1),
+    //                                theTH1.GetXaxis()->GetBinLowEdge(1),
+    //                                0);
 
-    printf("SFS line 242 case all good: size vector = %zu\n",
-           fVector_tf1_local.size());
+    // printf("SFS line 249 case all good: size vector = %zu\n",
+    //        fVector_tf1_local.size());
 
     bool isFullyInitializedNow = fVector_tf1_local.size() == nBinsXplus2;
     if (isFullyInitializedNow){
         printf("utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject() instance id: %s\n"
-            "\tfVector_tf1_local.size() = %zu, theTH1.GetNbinsX() = %zu\n",
+               "\tfVector_tf1_local.size() = %zu, theTH1.GetNbinsX() = %zu\n",
         id.data(), 
         fVector_tf1_local.size(), 
         nBinsX);   
