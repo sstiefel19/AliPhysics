@@ -5,7 +5,7 @@
 //_________________________________________________________________________________________________
 utils_TH1::utils_TH1(std::string const &theId /*= "utils_TH1_defConstructor"*/) 
     :   id{theId},
-        fTH1_ExponentialInterpolation_static_instance()
+        fTH1_ExponentialInterpolation_static_instance("utils_TH1")
 {
     printf("INFO: utils_TH1::utils_TH1(std::string const &theId): created instance %s\n",
            id.data());
