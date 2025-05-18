@@ -266,7 +266,7 @@ bool utils_TH1::TH1_ExponentialInterpolation::initGlobalFunctionObject(TF1 &theG
 double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 {
     // check if there is already a local interpol for this x
-    size_t const lBin = static_cast<size_t>(fTH1.FindBin(*x));
+    int const lBin = static_cast<size_t>(fTH1.FindBin(*x));
     double lResultValue = 0.;
 
     // return 0 here if outside the range bins 1..nBinsX of fTH1
@@ -290,7 +290,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
     bool wasObtainedFromCache = false;
     if (isInRangeOfHisto){
         // this means there is alrady an existing local TF1. Note that the vector will be comletely empty when called from initGlobalFunctionObject
-        lTF1_local_good = &fVector_tf1_local.at(lBin);
+        lTF1_local_good = &fVector_tf1_local.at(static_cast<size_t>(lBin));
         wasObtainedFromCache = true;
     } else if (canInsertAtBack){
 
@@ -315,7 +315,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     } else {
         printf("FATAL: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): instance %s\n"
-                "\tCan not insert new TF1 local for bin %zu because current size of vector is %zu\n"
+                "\tCan not insert new TF1 local for bin %d because current size of vector is %zu\n"
                 "\tThis will return 0. later\n.",
                id.data(),
               lBin,
@@ -324,7 +324,7 @@ double utils_TH1::TH1_ExponentialInterpolation::Evaluate(double *x, double *)
 
     if (lTF1_local_good){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation::Evaluate(): id: %s\n"
-                "\t x = %f, lBin = %zu, lTF1_local_good = %p, was obtained from cache ? %s.\n", 
+                "\t x = %f, lBin = %d, lTF1_local_good = %p, was obtained from cache ? %s.\n", 
             id.data(),
             *x,
             lBin,
