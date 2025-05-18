@@ -425,7 +425,9 @@ utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_sta
 }
 
 //_________________________________________________________________________________________________
-utils_TH1::TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &theRef)
+utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(
+    utils_TH1::TH1_ExponentialInterpolation_static const &theRef
+)
 :   
     id(theRef.id),
     fMap_TH1_ExponentialInterpolation(theRef.fMap_TH1_ExponentialInterpolation)    
@@ -445,17 +447,17 @@ utils_TH1::TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_stat
 */
 
 //_________________________________________________________________________________________________
-std::pair<TH1 const&, TH1_ExponentialInterpolation*>
+std::pair<TH1 const&, utils_TH1::TH1_ExponentialInterpolation*>
     utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance(TH1         const &_th1,
                                                                               bool               _integrate,
                                                                               bool               _useXtimesExp)
 {
     printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(): instance %s:\n"
-           "\tWill insert a new <&_TH1, TH1_ExponentialInterpolation*> , into map fMap_TH1_ExponentialInterpolation if key"
-           "\tnot already in map.\n"
+            "\tWill insert a new <&_TH1, TH1_ExponentialInterpolation*> , into map fMap_TH1_ExponentialInterpolation if key"
+            "\tnot already in map.\n",
            id.data());
     
-    auto lIt_found = fMap_TH1_ExponentialInterpolation.find(_th1);
+    auto lIt_found = fMap_TH1_ExponentialInterpolation.find(&_th1);
     if (lIt_found != fMap_TH1_ExponentialInterpolation.end()){
         printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static::insertNewExpInterInstance(): instance %s"
                 "Found element for TH1 %s in map. Will return an iterator to the element.\n",
