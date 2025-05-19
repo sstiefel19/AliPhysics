@@ -33,7 +33,7 @@ TF1 *utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(std::string const
            theNewName.data(), theTH1.GetName(), theIntegrate, theUseXtimesExp);
     
     TF1 *lTF1_result = 
-        fTH1_ExponentialInterpolation_static_instance.InitializeWithHisto(
+        fTH1_ExponentialInterpolation_static_instance.InitializeWithHistoAndInsertInMapTF1(
             theTH1, 
             theIntegrate, 
             theUseXtimesExp);

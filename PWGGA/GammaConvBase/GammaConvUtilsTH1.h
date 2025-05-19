@@ -100,8 +100,9 @@ class utils_TH1
                     &operator=(utils_TH1::TH1_ExponentialInterpolation const &theConstRef) = delete;
             
             private:
-                bool initGlobalFunctionObject(TF1 &theGlobalTF1, TH1  &theTH1);
-                TF1 *produceNewNativeGlobalTF1(std::string const &theNewName);
+                TF1 *createNewInitializedGlobalTF1(std::string const &theNewName);
+                TF1 *initGlobalFunctionObject(TF1 &theGlobalTF1, TH1  &theTH1);
+                TF1 *produceNewNativeUninitializedGlobalTF1(std::string const &theNewName);
                                 
                 std::string                          id;
                 TH1_ExponentialInterpolation_static *fStaticParent;
@@ -135,20 +136,19 @@ class utils_TH1
                 ~TH1_ExponentialInterpolation_static();
 
                 // returns a valid TF1 interpolation from stack or create new one if necessary
-                TF1 *GetInterpolationTF1(TH1 const  &theTH1,
-                                        bool        theIntegrate,
-                                        bool        theUseXtimesExp,
-                                        bool        theCreateNewIfNecessary = true);
-        
+                TF1 *GetInterpolationTF1_opt_createNewIfNecessary(TH1 const  &theTH1,
+                                                                  bool       theIntegrate,
+                                                                  bool       theUseXtimesExp,
+                                                                  bool       theCreateNewIfNecessary = true );        
                 TF1 const
                     *GetInterpolationTF1_const(TH1 const &theTH1) const;
                 
                 std::string const 
                     GetId() const                { return id; } 
                 
-                TF1 *InitializeWithHisto(TH1 const  &theTH1, 
-                                         bool        theIntegrate, 
-                                         bool        theUseXtimesExp);
+                TF1 *InitializeWithHistoAndInsertInMapTF1(TH1 const  &theTH1, 
+                                                          bool        theIntegrate, 
+                                                          bool        theUseXtimesExp);
                 
                 bool IsInitialized() const;
         
