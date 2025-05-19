@@ -172,9 +172,6 @@ class utils_TH1
                 // utils_TH1::TH1_ExponentialInterpolation_static data members
                 std::string                                                     id;
                 
-                // todo: check if I really want it like that
-                // todo: check if it works
-                // static 
                 std::map<TH1 const*, utils_TH1::TH1_ExponentialInterpolation*>  fMap_TH1_ExponentialInterpolation;
         }; // end class utils_TH1::TH1_ExponentialInterpolation_static {
     
