@@ -548,27 +548,11 @@ utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_sta
             &fMap_TH1_ExponentialInterpolation);
 }
 
-// //_________________________________________________________________________________________________
-// utils_TH1::TH1_ExponentialInterpolation_static::TH1_ExponentialInterpolation_static(
-//     utils_TH1::TH1_ExponentialInterpolation_static const &&theOther
-// )
-// :   
-//     id{std::move(theOther.id)},
-//     fMap_TH1_ExponentialInterpolation{std::move(theOther.fMap_TH1_ExponentialInterpolation)}    
-// {
-//     printf("INFO: utils_TH1::TH1_ExponentialInterpolation_static(TH1_ExponentialInterpolation_static const &&theOther): instance: %s\n"
-//             "\tCalled move constructor. New Element has properties:\n"
-//             "\tfMap_TH1_ExponentialInterpolation.size() = %zu\n",
-//            id.data(),
-//            fMap_TH1_ExponentialInterpolation.size());
-// }
-
 /* 
     The only function that fills the the base member fMap_TH1_ExponentialInterpolation.
     That means it creates new TH1_ExponentialInterpolation on heap and fills the pair <&TH1, TH1_ExponentialInterpolation> 
     into the map
 */
-
 // checks first whether element is contained already
 //_________________________________________________________________________________________________
 utils_TH1::TH1_ExponentialInterpolation&
