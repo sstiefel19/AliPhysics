@@ -4,6 +4,7 @@
 // Class handling all kinds of selection cuts for Gamma Conversion analysis
 // Authors: Friederike Bock, Daniel Muehlheim
 #include <map>
+#include <vector>
 #include <TObjString.h>
 #include "AliAODTrack.h"
 #include "AliESDtrack.h"
@@ -446,7 +447,8 @@ class AliConvEventCuts : public AliAnalysisCuts {
         kInvariant,          // 1
         kVariant,            // 2
         kInvariant_expInter, // 3
-        kVariant_expInter    // 4
+        kVariant_expInter,   // 4
+        kInvariant_logpchip  // 5
       };
 
       /**
@@ -459,6 +461,9 @@ class AliConvEventCuts : public AliAnalysisCuts {
         TF1 const *fData;
         TH1 const *hMC;
         TF1 const *fMC;
+        std::vector<double> vMC_logPchip_x;
+        std::vector<double> vMC_logPchip_y;
+        std::vector<double> vMC_logPchip_m;
       };
       // ============ END section for pt weights in variant calculation form =====
 

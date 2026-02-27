@@ -23,6 +23,8 @@
 
 #include "AliConvEventCuts.h"
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <TSystem.h>
 #include "AliAODTrack.h"
@@ -1112,6 +1114,97 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
                                               TF1 const *theDataTF1_inv,
                                               TH1D const *theMCTH1_inv)
   { 
+    auto buildLogPchipFromHist = [](TH1 const &theH,
+                                    std::vector<double> &theX,
+                                    std::vector<double> &theLogY,
+                                    std::vector<double> &theM) -> bool
+    {
+      auto sgn = [](double a) -> int { return (a > 0.) - (a < 0.); };
+
+      theX.clear();
+      theLogY.clear();
+      theM.clear();
+
+      Int_t nBins = theH.GetNbinsX();
+      if (nBins < 2)
+      {
+        return false;
+      }
+
+      theX.reserve(nBins);
+      theLogY.reserve(nBins);
+      constexpr double kFloorDensity = 1e-300;
+
+      for (Int_t i = 1; i <= nBins; ++i)
+      {
+        // Keep normalization consistent with the legacy TH1::Interpolate path
+        // used for invariant weighting: interpolate histogram content directly.
+        double dens = theH.GetBinContent(i);
+        dens = std::max(dens, kFloorDensity);
+        theX.push_back(theH.GetBinCenter(i));
+        theLogY.push_back(std::log(dens));
+      }
+
+      Int_t n = static_cast<Int_t>(theX.size());
+      theM.assign(n, 0.);
+      if (n == 2)
+      {
+        double dx = theX[1] - theX[0];
+        if (dx <= 0.)
+        {
+          return false;
+        }
+        double d = (theLogY[1] - theLogY[0]) / dx;
+        theM[0] = d;
+        theM[1] = d;
+        return true;
+      }
+
+      std::vector<double> h(n - 1, 0.);
+      std::vector<double> d(n - 1, 0.);
+      for (Int_t i = 0; i < n - 1; ++i)
+      {
+        h[i] = theX[i + 1] - theX[i];
+        if (h[i] <= 0.)
+        {
+          return false;
+        }
+        d[i] = (theLogY[i + 1] - theLogY[i]) / h[i];
+      }
+
+      auto endpoint = [&sgn](double h0, double h1, double d0, double d1) -> double
+      {
+        double m0 = ((2. * h0 + h1) * d0 - h0 * d1) / (h0 + h1);
+        if (sgn(m0) != sgn(d0))
+        {
+          m0 = 0.;
+        }
+        else if (sgn(d0) != sgn(d1) && std::abs(m0) > 3. * std::abs(d0))
+        {
+          m0 = 3. * d0;
+        }
+        return m0;
+      };
+
+      theM[0] = endpoint(h[0], h[1], d[0], d[1]);
+      theM[n - 1] = endpoint(h[n - 2], h[n - 3], d[n - 2], d[n - 3]);
+
+      for (Int_t i = 1; i < n - 1; ++i)
+      {
+        if (d[i - 1] == 0. || d[i] == 0. || sgn(d[i - 1]) != sgn(d[i]))
+        {
+          theM[i] = 0.;
+        }
+        else
+        {
+          double w1 = 2. * h[i] + h[i - 1];
+          double w2 = h[i] + 2. * h[i - 1];
+          theM[i] = (w1 + w2) / (w1 / d[i - 1] + w2 / d[i]);
+        }
+      }
+      return true;
+    };
+
     AliInfo(Form("calculateVariantSpectraAndInsert(): called with:\n"
                  "\tthePDGCode: %d\n"
                  "\ttheWhich: %d\n"
@@ -1151,20 +1244,40 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
     // done with checks on arguments. Prepare data for insertion into the map
     TF1 const *lDataTF1 = nullptr;
     TH1 const *lMCTH1 = nullptr;
+    TF1 *lMCTF1_exp_inter = nullptr;
+    std::vector<double> lMClogPchip_x;
+    std::vector<double> lMClogPchip_y;
+    std::vector<double> lMClogPchip_m;
 
     bool lIsVar = !(theWhich % 2); // kInvariant = 1, kInvariant_expInter = 3;
     lDataTF1 = lIsVar ?  multiplyTF1ByX(*theDataTF1_inv) : theDataTF1_inv;
     lMCTH1   = lIsVar ? &multiplyTH1ByBinCenters(*theMCTH1_inv) : theMCTH1_inv;
-    
-    TF1 *lMCTF1_exp_inter = lMCTH1
-      ?  fUtils_TH1.utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(
-            Form("%s_exp_inter", lMCTH1->GetName()), 
-            *lMCTH1,
-            lIsVar /*theIntegrate*/,    // integration is only correct if the spectrum is in variant form
-            lIsVar /*theUseXtimesExp*/) // since the shape is exponential only in invariant form, we need x*exp(x) for the variant form
-      : nullptr;
-    
-    if (!lMCTF1_exp_inter){
+
+    bool lUseExpInter = (theWhich == kInvariant_expInter || theWhich == kVariant_expInter);
+    bool lUseLogPchip = (theWhich == kInvariant_logpchip);
+
+    if (lUseExpInter)
+    {
+      lMCTF1_exp_inter = lMCTH1
+        ?  fUtils_TH1.utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(
+              Form("%s_exp_inter", lMCTH1->GetName()),
+              *lMCTH1,
+              lIsVar /*theIntegrate*/,    // integration is only correct if the spectrum is in variant form
+              lIsVar /*theUseXtimesExp*/) // since the shape is exponential only in invariant form, we need x*exp(x) for the variant form
+        : nullptr;
+    }
+    else if (lUseLogPchip)
+    {
+      if (!buildLogPchipFromHist(*lMCTH1, lMClogPchip_x, lMClogPchip_y, lMClogPchip_m))
+      {
+        AliError(Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects():\n"
+                      "\tfailed to build log-PCHIP interpolation for histo %s\n",
+                      lMCTH1->GetName()));
+        return false;
+      }
+    }
+
+    if (lUseExpInter && !lMCTF1_exp_inter){
         AliError(Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects():\n"
                       "\tRetrieved nullptr for lMCTF1_exp_inter which was tried to create for histo %s:\n"
                       "\tParameters: theIntegrate = %d, theUseXtimesExp = %d\n\n",
@@ -1173,7 +1286,13 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
     }
 
     // preparation done, insert into the map
-    PtWeightsBundle const &lBundle = *new PtWeightsBundle({theWhich, lDataTF1, lMCTH1, lMCTF1_exp_inter});
+    PtWeightsBundle const &lBundle = *new PtWeightsBundle({theWhich,
+                                                            lDataTF1,
+                                                            lMCTH1,
+                                                            lMCTF1_exp_inter,
+                                                            std::move(lMClogPchip_x),
+                                                            std::move(lMClogPchip_y),
+                                                            std::move(lMClogPchip_m)});
     const auto [it, success] =  fMapPtWeightsAccessObjects.insert(std::pair{thePDGCode, lBundle});
     if (!success)
     {
@@ -8334,9 +8453,92 @@ Float_t AliConvEventCuts::GetWeightForMesonNew(Int_t index, AliMCEvent *mcEvent,
 
   auto const &lBundle = lConstIt->second;
   Double_t lNomData = lBundle.fData->Eval(mesonPt);
-  Double_t lDenomMC = (lBundle.eWhich > kVariant) // leaves kInvariant_expInter, kVariant_expInter 
-    ? lBundle.fMC->Eval(mesonPt)
-    : lBundle.hMC->Interpolate(mesonPt);
+  auto evalLogPchip = [](double theX,
+                         std::vector<double> const &theKnotsX,
+                         std::vector<double> const &theKnotsY,
+                         std::vector<double> const &theSlopes) -> double
+  {
+    size_t n = theKnotsX.size();
+    if (n < 2 || theKnotsY.size() != n || theSlopes.size() != n)
+    {
+      return 0.;
+    }
+
+    if (theX <= theKnotsX.front())
+    {
+      return std::exp(theKnotsY.front());
+    }
+    if (theX >= theKnotsX.back())
+    {
+      return std::exp(theKnotsY.back());
+    }
+
+    auto it = std::upper_bound(theKnotsX.cbegin(), theKnotsX.cend(), theX);
+    size_t i = static_cast<size_t>(it - theKnotsX.cbegin() - 1);
+    double h = theKnotsX[i + 1] - theKnotsX[i];
+    if (h <= 0.)
+    {
+      return 0.;
+    }
+
+    double t = (theX - theKnotsX[i]) / h;
+    double h00 = 2. * t * t * t - 3. * t * t + 1.;
+    double h10 = t * t * t - 2. * t * t + t;
+    double h01 = -2. * t * t * t + 3. * t * t;
+    double h11 = t * t * t - t * t;
+
+    double logVal = h00 * theKnotsY[i]
+                  + h10 * h * theSlopes[i]
+                  + h01 * theKnotsY[i + 1]
+                  + h11 * h * theSlopes[i + 1];
+    return std::exp(logVal);
+  };
+  Double_t lDenomMC = 0.;
+  if (lBundle.eWhich == kInvariant_logpchip)
+  {
+    if (lBundle.hMC)
+    {
+      Int_t lBin = lBundle.hMC->GetXaxis()->FindFixBin(mesonPt);
+      if (lBin < 1)
+      {
+        lBin = 1;
+      }
+      else if (lBin > lBundle.hMC->GetNbinsX())
+      {
+        lBin = lBundle.hMC->GetNbinsX();
+      }
+
+      // If local MC support is zero, keep weight neutral.
+      if (lBundle.hMC->GetBinContent(lBin) <= 0.)
+      {
+        return 1.;
+      }
+
+      Int_t lBinPrev = (lBin > 1) ? (lBin - 1) : lBin;
+      Int_t lBinNext = (lBin < lBundle.hMC->GetNbinsX()) ? (lBin + 1) : lBin;
+      if (lBundle.hMC->GetBinContent(lBinPrev) <= 0. || lBundle.hMC->GetBinContent(lBinNext) <= 0.)
+      {
+        return 1.;
+      }
+    }
+    lDenomMC = evalLogPchip(mesonPt, lBundle.vMC_logPchip_x, lBundle.vMC_logPchip_y, lBundle.vMC_logPchip_m);
+    if (!isfinite(lDenomMC) || lDenomMC <= 0.)
+    {
+      return 1.;
+    }
+    if (!isfinite(lNomData) || lNomData <= 0.)
+    {
+      return 1.;
+    }
+  }
+  else if (lBundle.eWhich > kVariant) // leaves kInvariant_expInter, kVariant_expInter
+  {
+    lDenomMC = lBundle.fMC ? lBundle.fMC->Eval(mesonPt) : 0.;
+  }
+  else
+  {
+    lDenomMC = lBundle.hMC->Interpolate(mesonPt);
+  }
 
   auto calcWeight = [&PDGCode, &checkSanitizeAndReturnWeight, &lNomData, &lDenomMC]()
   {
