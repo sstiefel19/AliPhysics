@@ -461,9 +461,9 @@ class AliConvEventCuts : public AliAnalysisCuts {
         TF1 const *fData;
         TH1 const *hMC;
         TF1 const *fMC;
-        std::vector<double> vMC_logPchip_x;
-        std::vector<double> vMC_logPchip_y;
-        std::vector<double> vMC_logPchip_m;
+        std::vector<double> vMC_pchipCDF_x;
+        std::vector<double> vMC_pchipCDF_y;
+        std::vector<double> vMC_pchipCDF_m;
       };
       // ============ END section for pt weights in variant calculation form =====
 

@@ -1114,38 +1114,54 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
                                               TF1 const *theDataTF1_inv,
                                               TH1D const *theMCTH1_inv)
   { 
-    auto buildLogPchipFromHist = [](TH1 const &theH,
+    auto buildIntegralPreservingPchipFromHist = [](TH1 const &theH,
                                     std::vector<double> &theX,
-                                    std::vector<double> &theLogY,
+                                    std::vector<double> &theCumY,
                                     std::vector<double> &theM) -> bool
     {
       auto sgn = [](double a) -> int { return (a > 0.) - (a < 0.); };
 
       theX.clear();
-      theLogY.clear();
+      theCumY.clear();
       theM.clear();
 
       Int_t nBins = theH.GetNbinsX();
-      if (nBins < 2)
+      if (nBins < 1)
       {
         return false;
       }
 
-      theX.reserve(nBins);
-      theLogY.reserve(nBins);
-      constexpr double kFloorDensity = 1e-300;
-
-      for (Int_t i = 1; i <= nBins; ++i)
+      // Build cumulative knot values at bin edges.
+      // Interpolating this CDF with monotone PCHIP and differentiating later
+      // gives a smooth denominator whose per-bin integral matches exactly.
+      theX.reserve(nBins + 1);
+      theCumY.reserve(nBins + 1);
+      double cum = 0.;
+      for (Int_t i = 1; i <= nBins + 1; ++i)
       {
-        // Keep normalization consistent with the legacy TH1::Interpolate path
-        // used for invariant weighting: interpolate histogram content directly.
-        double dens = theH.GetBinContent(i);
-        dens = std::max(dens, kFloorDensity);
-        theX.push_back(theH.GetBinCenter(i));
-        theLogY.push_back(std::log(dens));
+        double edge = theH.GetXaxis()->GetBinLowEdge(i);
+        if (!theX.empty() && edge <= theX.back())
+        {
+          return false;
+        }
+        theX.push_back(edge);
+        theCumY.push_back(cum);
+
+        if (i <= nBins)
+        {
+          double c = theH.GetBinContent(i);
+          double bw = theH.GetBinWidth(i);
+          if (!isfinite(c) || c < 0. || !isfinite(bw) || bw <= 0.)
+          {
+            return false;
+          }
+          // CDF must integrate the underlying function over x.
+          // For histogram ordinates this is bin content * bin width.
+          cum += c * bw;
+        }
       }
 
-      Int_t n = static_cast<Int_t>(theX.size());
+      Int_t n = static_cast<Int_t>(theX.size()); // nBins + 1
       theM.assign(n, 0.);
       if (n == 2)
       {
@@ -1154,7 +1170,7 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
         {
           return false;
         }
-        double d = (theLogY[1] - theLogY[0]) / dx;
+        double d = (theCumY[1] - theCumY[0]) / dx;
         theM[0] = d;
         theM[1] = d;
         return true;
@@ -1169,7 +1185,7 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
         {
           return false;
         }
-        d[i] = (theLogY[i + 1] - theLogY[i]) / h[i];
+        d[i] = (theCumY[i + 1] - theCumY[i]) / h[i];
       }
 
       auto endpoint = [&sgn](double h0, double h1, double d0, double d1) -> double
@@ -1245,16 +1261,16 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
     TF1 const *lDataTF1 = nullptr;
     TH1 const *lMCTH1 = nullptr;
     TF1 *lMCTF1_exp_inter = nullptr;
-    std::vector<double> lMClogPchip_x;
-    std::vector<double> lMClogPchip_y;
-    std::vector<double> lMClogPchip_m;
+    std::vector<double> lMCpchipCDF_x;
+    std::vector<double> lMCpchipCDF_y;
+    std::vector<double> lMCpchipCDF_m;
 
     bool lIsVar = !(theWhich % 2); // kInvariant = 1, kInvariant_expInter = 3;
     lDataTF1 = lIsVar ?  multiplyTF1ByX(*theDataTF1_inv) : theDataTF1_inv;
     lMCTH1   = lIsVar ? &multiplyTH1ByBinCenters(*theMCTH1_inv) : theMCTH1_inv;
 
     bool lUseExpInter = (theWhich == kInvariant_expInter || theWhich == kVariant_expInter);
-    bool lUseLogPchip = (theWhich == kInvariant_logpchip);
+    bool lUsePchipCDF = (theWhich == kInvariant_logpchip);
 
     if (lUseExpInter)
     {
@@ -1266,12 +1282,12 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
               lIsVar /*theUseXtimesExp*/) // since the shape is exponential only in invariant form, we need x*exp(x) for the variant form
         : nullptr;
     }
-    else if (lUseLogPchip)
+    else if (lUsePchipCDF)
     {
-      if (!buildLogPchipFromHist(*lMCTH1, lMClogPchip_x, lMClogPchip_y, lMClogPchip_m))
+      if (!buildIntegralPreservingPchipFromHist(*lMCTH1, lMCpchipCDF_x, lMCpchipCDF_y, lMCpchipCDF_m))
       {
         AliError(Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects():\n"
-                      "\tfailed to build log-PCHIP interpolation for histo %s\n",
+                      "\tfailed to build integral-preserving PCHIP interpolation for histo %s\n",
                       lMCTH1->GetName()));
         return false;
       }
@@ -1290,9 +1306,9 @@ int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
                                                             lDataTF1,
                                                             lMCTH1,
                                                             lMCTF1_exp_inter,
-                                                            std::move(lMClogPchip_x),
-                                                            std::move(lMClogPchip_y),
-                                                            std::move(lMClogPchip_m)});
+                                                            std::move(lMCpchipCDF_x),
+                                                            std::move(lMCpchipCDF_y),
+                                                            std::move(lMCpchipCDF_m)});
     const auto [it, success] =  fMapPtWeightsAccessObjects.insert(std::pair{thePDGCode, lBundle});
     if (!success)
     {
@@ -8453,45 +8469,59 @@ Float_t AliConvEventCuts::GetWeightForMesonNew(Int_t index, AliMCEvent *mcEvent,
 
   auto const &lBundle = lConstIt->second;
   Double_t lNomData = lBundle.fData->Eval(mesonPt);
-  auto evalLogPchip = [](double theX,
-                         std::vector<double> const &theKnotsX,
-                         std::vector<double> const &theKnotsY,
-                         std::vector<double> const &theSlopes) -> double
+  auto evalIntegralPreservingPchip = [](double theX,
+                                        std::vector<double> const &theKnotsX,
+                                        std::vector<double> const &theCumY,
+                                        std::vector<double> const &theSlopes) -> double
   {
     size_t n = theKnotsX.size();
-    if (n < 2 || theKnotsY.size() != n || theSlopes.size() != n)
+    if (n < 2 || theCumY.size() != n || theSlopes.size() != n)
     {
       return 0.;
     }
 
-    if (theX <= theKnotsX.front())
-    {
-      return std::exp(theKnotsY.front());
-    }
-    if (theX >= theKnotsX.back())
-    {
-      return std::exp(theKnotsY.back());
-    }
+    // Clamp to valid range and evaluate derivative of cubic Hermite CDF.
+    double xEval = theX;
+    if (xEval <= theKnotsX.front())
+      xEval = theKnotsX.front();
+    if (xEval >= theKnotsX.back())
+      xEval = theKnotsX.back();
 
-    auto it = std::upper_bound(theKnotsX.cbegin(), theKnotsX.cend(), theX);
-    size_t i = static_cast<size_t>(it - theKnotsX.cbegin() - 1);
+    auto it = std::upper_bound(theKnotsX.cbegin(), theKnotsX.cend(), xEval);
+    size_t i = 0;
+    if (it == theKnotsX.cbegin())
+    {
+      i = 0;
+    }
+    else if (it == theKnotsX.cend())
+    {
+      i = n - 2;
+    }
+    else
+    {
+      i = static_cast<size_t>(it - theKnotsX.cbegin() - 1);
+    }
     double h = theKnotsX[i + 1] - theKnotsX[i];
     if (h <= 0.)
     {
       return 0.;
     }
 
-    double t = (theX - theKnotsX[i]) / h;
-    double h00 = 2. * t * t * t - 3. * t * t + 1.;
-    double h10 = t * t * t - 2. * t * t + t;
-    double h01 = -2. * t * t * t + 3. * t * t;
-    double h11 = t * t * t - t * t;
+    double t = (xEval - theKnotsX[i]) / h;
+    double dh00 = 6. * t * t - 6. * t;
+    double dh10 = 3. * t * t - 4. * t + 1.;
+    double dh01 = -dh00;
+    double dh11 = 3. * t * t - 2. * t;
 
-    double logVal = h00 * theKnotsY[i]
-                  + h10 * h * theSlopes[i]
-                  + h01 * theKnotsY[i + 1]
-                  + h11 * h * theSlopes[i + 1];
-    return std::exp(logVal);
+    double dFdx = (dh00 * theCumY[i]
+                 + dh10 * h * theSlopes[i]
+                 + dh01 * theCumY[i + 1]
+                 + dh11 * h * theSlopes[i + 1]) / h;
+    if (!isfinite(dFdx))
+    {
+      return 0.;
+    }
+    return (dFdx > 0.) ? dFdx : 0.;
   };
   Double_t lDenomMC = 0.;
   if (lBundle.eWhich == kInvariant_logpchip)
@@ -8521,7 +8551,7 @@ Float_t AliConvEventCuts::GetWeightForMesonNew(Int_t index, AliMCEvent *mcEvent,
         return 1.;
       }
     }
-    lDenomMC = evalLogPchip(mesonPt, lBundle.vMC_logPchip_x, lBundle.vMC_logPchip_y, lBundle.vMC_logPchip_m);
+    lDenomMC = evalIntegralPreservingPchip(mesonPt, lBundle.vMC_pchipCDF_x, lBundle.vMC_pchipCDF_y, lBundle.vMC_pchipCDF_m);
     if (!isfinite(lDenomMC) || lDenomMC <= 0.)
     {
       return 1.;
