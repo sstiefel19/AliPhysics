@@ -141,9 +141,9 @@ AliConvEventCuts::AliConvEventCuts(const char *name,const char *title) :
   fDoCentralityFlat(0),
   fPathWeightsFlatCent(""),
   fNameHistoNotFlatCentrality(""),
-  fDoReweightHistoMCPi0(kOff),
-  fDoReweightHistoMCEta(kOff),
-  fDoReweightHistoMCK0s(kOff),
+  fDoReweightHistoMCPi0(0),
+  fDoReweightHistoMCEta(0),
+  fDoReweightHistoMCK0s(0),
   fPathTrFReweighting(""),
   fNameHistoReweightingPi0(""),
   fNameHistoReweightingEta(""),
@@ -224,13 +224,7 @@ AliConvEventCuts::AliConvEventCuts(const char *name,const char *title) :
   hReweightMultMC(NULL),
   fPHOSTrigger(kPHOSAny),
   fHistoV0MMultCorrMC(nullptr),
-  fUseGetWeightForMesonNew(kTRUE),
-  fMapPtWeightsAccessObjects(),
-  fMapPtWeightsIsFilledAndSane(kFALSE),
-  fHistoRelDiffNewOldMesonWeights_Pi0(nullptr),
-  fHistoRelDiffNewOldMesonWeights_Eta(nullptr),
   hCountMissingEventInformation(nullptr),
-  fUtils_TH1{"AliConvEventCuts_fUtils_TH1"},
   fDebugLevel(0)
 {
   for(Int_t jj=0;jj<kNCuts;jj++){fCuts[jj]=0;}
@@ -382,13 +376,7 @@ AliConvEventCuts::AliConvEventCuts(const AliConvEventCuts &ref) :
   hReweightMultMC(ref.hReweightMultMC),
   fPHOSTrigger(kPHOSAny),
   fHistoV0MMultCorrMC(ref.fHistoV0MMultCorrMC),
-  fUseGetWeightForMesonNew(ref.fUseGetWeightForMesonNew),
-  fMapPtWeightsAccessObjects(ref.fMapPtWeightsAccessObjects),
-  fMapPtWeightsIsFilledAndSane(ref.fMapPtWeightsIsFilledAndSane),
-  fHistoRelDiffNewOldMesonWeights_Pi0(ref.fHistoRelDiffNewOldMesonWeights_Pi0),
-  fHistoRelDiffNewOldMesonWeights_Eta(ref.fHistoRelDiffNewOldMesonWeights_Eta),
   hCountMissingEventInformation{ref.hCountMissingEventInformation},
-  fUtils_TH1(ref.fUtils_TH1),
   fDebugLevel(ref.fDebugLevel)
 {
   // Copy Constructor
@@ -471,20 +459,6 @@ void AliConvEventCuts::InitCutHistograms(TString name, Bool_t preCut){
         8.);
     fHistograms->Add(hCountMissingEventInformation);
   }
-
-  if (fUseGetWeightForMesonNew){
-    fHistoRelDiffNewOldMesonWeights_Pi0 = new TH2D("fHistoRelDiffNewOldMesonWeights_Pi0", 
-                                                   "fHistoRelDiffNewOldMesonWeights_Pi0;ptG (GeV/c);(new-old)/old;counts", 
-                                               250, 0., 25., 200, -.5, .5);
-    fHistoRelDiffNewOldMesonWeights_Eta = new TH2D("fHistoRelDiffNewOldMesonWeights_Eta", 
-                                                   "fHistoRelDiffNewOldMesonWeights_Eta;ptG (GeV/c);(new-old)/old;counts", 
-                                                   250, 0., 25., 200, -.5, .5);
-    
-    // add all fHistoRelDiffNewOldMesonWeights_ Pi0 and Eta
-    fHistograms->Add(fHistoRelDiffNewOldMesonWeights_Pi0);
-    fHistograms->Add(fHistoRelDiffNewOldMesonWeights_Eta);
-  }
-
 
   if (hReweightMultData){
     hReweightMultData->SetName(Form("hReweightMultData_%s",GetCutNumber().Data()));
@@ -1082,156 +1056,6 @@ void AliConvEventCuts::LoadGammaPtReweightingHistosMCFromFile() {
   delete f;
 }
 
-//________________________________________________________________________
-int AliConvEventCuts::InitializeMapPtWeightsAccessObjects()
-{
-  auto multiplyTF1ByX = [](TF1 const &theF){
-    TF1 *lResult = new TF1(Form("%s_multByX", theF.GetName()),
-                            Form("x*(%s)", theF.GetExpFormula().Data()),
-                            theF.GetXmin(), theF.GetXmax());
-    lResult->SetParameters(theF.GetParameters());
-    return lResult;
-  };
-  auto multiplyTH1ByBinCenters = [](TH1 const &theH) -> TH1 &
-  {
-    TH1 &lResult = dynamic_cast<TH1 &>(*theH.Clone(Form("%s_multByBinCenters", theH.GetName())));
-    for (int i = 1; i <= lResult.GetNbinsX(); ++i)
-    {
-      Double_t center = lResult.GetBinCenter(i);
-      lResult.SetBinContent(i, lResult.GetBinContent(i) * center);
-      if (lResult.GetSumw2N())
-      {
-        lResult.SetBinError(i, lResult.GetBinError(i) * center);
-      }
-    }
-    return lResult;
-  };
-
-  auto calculateVariantSpectraAndInsert = [&](int thePDGCode,
-                                              EnumPtWeights theWhich,
-                                              TF1 const *theDataTF1_inv,
-                                              TH1D const *theMCTH1_inv)
-  { 
-    AliInfo(Form("calculateVariantSpectraAndInsert(): called with:\n"
-                 "\tthePDGCode: %d\n"
-                 "\ttheWhich: %d\n"
-                 "\ttheDataTF1_inv: %s\n"
-                 "\ttheMCTH1_inv: %s\n",
-                 thePDGCode, 
-                 static_cast<int>(theWhich), 
-                 theDataTF1_inv 
-                  ? theDataTF1_inv->GetName()
-                  : "nullptr" ,
-                  theMCTH1_inv 
-                    ? theMCTH1_inv->GetName()
-                    : "nullptr"));
-
-    if (!theWhich)
-    {
-      AliInfo(Form("calculateVariantSpectraAndInsert(): called with thePDGCode = %d and theWhich = kOff.\n"
-        "\tNothing to be done, returning true.\n", thePDGCode));
-        return true;
-    }
-
-    if (!(theDataTF1_inv && theMCTH1_inv))
-    {
-      AliWarning(Form("calculateVariantSpectraAndInsert() called with at least one nullptr:\n"
-                    "\tthePDGCode: %d\n"
-                    "\ttheWhich: %d\n"
-                    "\ttheDataTF1_inv: %s\n"
-                    "\ttheMCTH1_inv: %s\n"
-                    "\t returning false.\n",
-                    thePDGCode, 
-                    static_cast<int>(theWhich), 
-                    theDataTF1_inv ? theDataTF1_inv->GetName() : "nullptr",
-                    theMCTH1_inv ? theMCTH1_inv->GetName() : "nullptr"));
-      return false;
-    }
-    
-    // done with checks on arguments. Prepare data for insertion into the map
-    TF1 const *lDataTF1 = nullptr;
-    TH1 const *lMCTH1 = nullptr;
-
-    bool lIsVar = !(theWhich % 2); // kInvariant = 1, kInvariant_expInter = 3;
-    lDataTF1 = lIsVar ?  multiplyTF1ByX(*theDataTF1_inv) : theDataTF1_inv;
-    lMCTH1   = lIsVar ? &multiplyTH1ByBinCenters(*theMCTH1_inv) : theMCTH1_inv;
-    
-    TF1 *lMCTF1_exp_inter = lMCTH1
-      ?  fUtils_TH1.utils_TH1::InitGlobalPieceWiseExponentialInterpolationTF1(
-            Form("%s_exp_inter", lMCTH1->GetName()), 
-            *lMCTH1,
-            lIsVar /*theIntegrate*/,    // integration is only correct if the spectrum is in variant form
-            lIsVar /*theUseXtimesExp*/) // since the shape is exponential only in invariant form, we need x*exp(x) for the variant form
-      : nullptr;
-    
-    if (!lMCTF1_exp_inter){
-        AliError(Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects():\n"
-                      "\tRetrieved nullptr for lMCTF1_exp_inter which was tried to create for histo %s:\n"
-                      "\tParameters: theIntegrate = %d, theUseXtimesExp = %d\n\n",
-                      lMCTH1->GetName(), lIsVar, lIsVar));
-        return false;
-    }
-
-    // preparation done, insert into the map
-    PtWeightsBundle const &lBundle = *new PtWeightsBundle({theWhich, lDataTF1, lMCTH1, lMCTF1_exp_inter});
-    const auto [it, success] =  fMapPtWeightsAccessObjects.insert(std::pair{thePDGCode, lBundle});
-    if (!success)
-    {
-      AliError(Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects(): failed to insert:\n"
-                    "\tthePDGCode: %d\n"
-                    "\ttheWhich: %d\n"
-                    "\ttheDataTF1_inv: %s\n"
-                    "\ttheMCTH1_inv: %s\n",
-                    thePDGCode, static_cast<int>(theWhich), theDataTF1_inv->GetName(), theMCTH1_inv->GetName()));
-      return false;
-    } 
-    else
-    {
-      auto const &lBundle = it->second;
-      std::string lNameF(lBundle.fMC 
-        ? lBundle.fMC->GetName() 
-        : "nullptr");  
-      std::string lMessage(
-        Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects(): inserted:\n"
-             "\tthePDGCode: %d\n"
-             "\teWhich: %d\n"
-             "\tfData: %s\n"
-             "\thMC: %s\n"
-             "\tfMC: %s\n",
-             it->first, 
-             static_cast<int>(lBundle.eWhich), 
-             lBundle.fData->GetName(), 
-             lBundle.hMC->GetName(),
-             lNameF.data()));
-      AliInfo(lMessage.data());
-    }
-    return true;
-  }; // end calculateVariantSpectraAndInsert
-
-  // execution starts here
-  AliInfo(Form("AliConvEventCuts::InitializeMapPtWeightsAccessObjects() cutNumber %s: start\n", 
-               GetCutNumber().Data()));
-  
-  // If Etas get reweighted so should their daughter Pi0s.             
-  if (fDoReweightHistoMCEta && !fDoReweightHistoMCPi0)
-  {
-    AliFatal("AliConvEventCuts::InitializeMapPtWeightsAccessObjects(): fDoReweightHistoMCEta is true and fDoReweightHistoMCPi0 is false.");
-    return 0;
-  }
-  
-  bool lSuccess = true;
-  lSuccess &= calculateVariantSpectraAndInsert(111, fDoReweightHistoMCPi0, fFitDataPi0_inv, hReweightMCHistPi0_inv);
-  lSuccess &= calculateVariantSpectraAndInsert(221, fDoReweightHistoMCEta, fFitDataEta_inv, hReweightMCHistEta_inv);
-  lSuccess &= calculateVariantSpectraAndInsert(310, fDoReweightHistoMCK0s, fFitDataK0s_inv, hReweightMCHistK0s_inv);
-
-  if (!lSuccess)
-  {
-    AliError("AliConvEventCuts::InitializeMapPtWeightsAccessObjects(): failed to initialize map.");
-    return 0;
-  }
-  AliInfo("AliConvEventCuts::InitializeMapPtWeightsAccessObjects(): end.\n");
-  return 1.;
-}
 
 ///________________________________________________________________________
 Bool_t AliConvEventCuts::InitializeCutsFromCutString(const TString analysisCutSelection ) {
@@ -1251,16 +1075,6 @@ Bool_t AliConvEventCuts::InitializeCutsFromCutString(const TString analysisCutSe
   if(fDoReweightHistoMCPi0 || fDoReweightHistoMCEta || fDoReweightHistoMCK0s) {
     AliInfo("Particle Weighting was enabled");
     LoadReweightingHistosMCFromFile();
-    bool requiered_newPtWeighting = (fDoReweightHistoMCPi0 > kInvariant) || 
-                                    (fDoReweightHistoMCEta > kInvariant); 
-    if (requiered_newPtWeighting){
-      fMapPtWeightsIsFilledAndSane = InitializeMapPtWeightsAccessObjects();
-      if (!fMapPtWeightsIsFilledAndSane){
-        AliFatal(Form("AliConvEventCuts::InitializeCutsFromCutString():\n"
-                      "Initialization of fMapPtWeightsAccessObjects failed despite requiered by [<EnumPtWeights>] Pi0: %d, Eta: %d.\n",
-                      fDoReweightHistoMCPi0, fDoReweightHistoMCEta));
-      }
-    }
   }
 
   if(fDoReweightHistoMCGamma) {
@@ -8196,164 +8010,11 @@ Float_t AliConvEventCuts::GetWeightForMeson(Int_t index, AliMCEvent *mcEvent, Al
   }
   // SFS end to be removed
   ////////////////////////////////////
-  
-  double const lWeightOld = GetWeightForMesonOld(index, mcEvent, event);
-  double const lWeightNew = (fUseGetWeightForMesonNew && fMapPtWeightsIsFilledAndSane) 
-    ?   GetWeightForMesonNew(index, mcEvent, event)
-    :   -1.; // -1 signals newWeights could not be used for whatever reasons
-  
-  double lSign = (lWeightNew>0) ? 1. : -1.;  
-  double diff = lWeightNew - lWeightOld;
 
-  double lRelDiff = lWeightOld 
-    ? diff / lWeightOld  
-    : (lSign*0.99);
-  
-  auto fillMesonHisto = [&](){
-    TH2 *lTH2 = isPi0 
-      ? fHistoRelDiffNewOldMesonWeights_Pi0
-      : isEta 
-        ? fHistoRelDiffNewOldMesonWeights_Eta
-        : static_cast<TH2*>(nullptr);
+  return GetWeightForMesonOld(index, mcEvent, event);
 
-    if (!lTH2){
-        AliWarning(Form("AliConvEventCuts::GetWeightForMeson()::fillMesonHisto():\n"
-                        "lTH2 is nullptr even though lWeightNew is sane.\n"
-                        "PDG code: %d, mesonPt = %f\n",
-                        lPDG, mesonPt));
-        return false;              
-    }
-    lTH2->Fill(mesonPt, lRelDiff);
-    return true;
-  };  
-  fillMesonHisto();
-  return (lWeightNew != -1.) ? lWeightNew : lWeightOld;
 }
 
-// todo: thinkg of using the return value of this function for more signaling purposes.
-//_________________________________________________________________________
-Float_t AliConvEventCuts::GetWeightForMesonNew(Int_t index, AliMCEvent *mcEvent, AliVEvent *event)
-{
-  // todo: check why I need to capture everything in order for it work
-  // returns 1 if function evaluation is to be continued
-  auto return_1_early = [&]()
-  {
-    Int_t kCaseGen = 0;
-    if (fPeriodEnum == kLHC13d2 || fPeriodEnum == kLHC13d2b ||                                                           // LHC10h MCs
-        fPeriodEnum == kLHC14a1a || fPeriodEnum == kLHC14a1b || fPeriodEnum == kLHC14a1c ||                              // LHC11h MCs
-        fPeriodEnum == kLHC13e7 || fPeriodEnum == kLHC13b2_efix || fPeriodEnum == kLHC14b2 || fPeriodEnum == kLHC18j5 || // LHC13bc MCs
-        fPeriodEnum == kLHC14e2b ||                                                                                      // LHC12[a-i] pass 1 MCs
-        fPeriodEnum == kLHC12f1a || fPeriodEnum == kLHC12f1b || fPeriodEnum == kLHC12i3 ||                               // LHC11a MCs
-        fPeriodEnum == kLHC16h4 || fPeriodEnum == kLHC19h3 || fPeriodEnum == kLHC20g10 || fPeriodEnum == kLHC24a1)       // LHC15o, LHC18qr pass1, LHC18qr pass3  MCs
-    {
-      kCaseGen = 1;
-    } // = added signal productions                                                                                                                                                                                                                                                                                                                                                             // added particles MC
-
-    else if (fPeriodEnum == kLHC18e1 || fPeriodEnum == kLHC18e1a || fPeriodEnum == kLHC18e1b || fPeriodEnum == kLHC18e1c || fPeriodEnum == kLHC16i1a || fPeriodEnum == kLHC16i1b || fPeriodEnum == kLHC16i1c || fPeriodEnum == kLHC16i2a || fPeriodEnum == kLHC16i2b || fPeriodEnum == kLHC16i2c || fPeriodEnum == kLHC16i3a || fPeriodEnum == kLHC16i3b || fPeriodEnum == kLHC16i3c || // LHC15o MCs
-             fPeriodEnum == kLHC12P2JJ || fPeriodEnum == kLHC16h3 || fPeriodEnum == kLHC18b8 || fPeriodEnum == kLHC16rP1JJ || fPeriodEnum == kLHC16sP1JJ || fPeriodEnum == kLHC16rsGJ || fPeriodEnum == kLHC16rsP2GJ || fPeriodEnum == kLHC16rsP2JJLow || fPeriodEnum == kLHC16rsP2JJHigh || fPeriodEnum == kLHC17g8a ||
-             fPeriodEnum == kLHC18f3 ||                                                                                          // LHC16qt MCs
-             fPeriodEnum == kLHC17l3b || fPeriodEnum == kLHC18j2 ||                                                              // LHC17pq MCs
-             fPeriodEnum == kLHC18l8a || fPeriodEnum == kLHC18l8b || fPeriodEnum == kLHC18l8c ||                                 // LHC18qr MC
-             fPeriodEnum == kLHC19h2a || fPeriodEnum == kLHC19h2b || fPeriodEnum == kLHC19h2c ||                                 // LHC18qr MC
-             fPeriodEnum == kLHC20e3a || fPeriodEnum == kLHC20e3b || fPeriodEnum == kLHC20e3c || fPeriodEnum == kLHC22b5 ||      // LHC18qr MC pass3 GenPurpose MCs
-             fPeriodEnum == kLHC20g2a_2 || fPeriodEnum == kLHC20g2b_2 || fPeriodEnum == kLHC20k6c || fPeriodEnum == kLHC23d8b || // LHC18qr MC pass3	other PWGs injected Particles MCs
-             fPeriodEnum == kLHC20j6a || fPeriodEnum == kLHC20j6b || fPeriodEnum == kLHC20j6c || fPeriodEnum == kLHC20j6d)       // LHC15o pass2 MCs
-    {
-      kCaseGen = 2; // regular MC
-    }
-
-    bool lResult = (kCaseGen == 0) ||
-      ((kCaseGen == 1) && !IsParticleFromBGEvent(index, mcEvent, event));
-    
-    if (lResult)
-    {
-      AliInfo(Form("return_1_early(): INFO: returning 'true' for particle %d.\n"
-                   "This will cause GetWeightForMesonNew() to return 1. immediately.\n",
-              index));
-    }
-    return lResult;
-  };
-
-  auto checkSanitizeAndReturnWeight = [&](Double_t theWeight, Int_t thePdgCode)
-  {
-    if ((theWeight < 0) || !isfinite(theWeight))
-    {
-      std::string lWarningMessage(
-        Form("checkSanitizeAndReturnWeight(): WARNING: Weight for meson %d is negative or not finite: %f.\n"
-             "It will be set to 0 - effectively rejecting the particle.\n"
-             "This points to a severe problem - investigate!\n",
-             thePdgCode, 
-             theWeight));
-      AliWarning(Form("checkSanitizeAndReturnWeight(): WARNING: Weight for meson %d is negative or not finite: %f.\n"
-                      "It will be set to 0 - effectively rejecting the particle.\n"
-                      "This points to a severe problem - investigate!\n",
-                      thePdgCode, 
-                      theWeight));
-      theWeight = 0.;
-    }
-    return theWeight;
-  };
-
-  // execution starts here
-  if(index < 0) 
-  { 
-    return 0; // No Particle
-  }
-  
-  if (return_1_early())
-  {
-    return 1.;
-  }
-
-  bool isESD = !event || (event->IsA() == AliESDEvent::Class());
-  bool isAOD = !isESD && (event->IsA() == AliAODEvent::Class());
-
-  if (isAOD && !fAODMCTrackArray){
-    fAODMCTrackArray = dynamic_cast<TClonesArray *>(event->FindListObject(AliAODMCParticle::StdBranchName()));
-    if (!fAODMCTrackArray)
-    {
-      AliWarning("GetWeightForMesonNew(): fAODMCTrackArray could not be obtained.");
-      return 0.;
-    }
-  }
-  AliAODMCParticle &aodMCParticle = *static_cast<AliAODMCParticle *>(fAODMCTrackArray->At(index));
-  Double_t mesonPt = isAOD 
-    ? aodMCParticle.Pt() 
-    : ((AliMCParticle *)mcEvent->GetTrack(index))->Pt();
-  Int_t PDGCode = isAOD 
-    ? aodMCParticle.GetPdgCode() 
-    : ((AliMCParticle *)mcEvent->GetTrack(index))->PdgCode();
-
-  // catch cases with invalid PDGCode
-  auto const &lConstIt = fMapPtWeightsAccessObjects.find(PDGCode);
-  if (lConstIt == fMapPtWeightsAccessObjects.cend())
-  {
-    AliWarning(Form("GetWeightForMesonNew(): WARNING: 3: PDGCode %d not found in fMapPtWeightsAccessObjects. Returning 1.\n", PDGCode));
-    return 1.;
-  }
-
-  auto const &lBundle = lConstIt->second;
-  Double_t lNomData = lBundle.fData->Eval(mesonPt);
-  Double_t lDenomMC = (lBundle.eWhich > kVariant) // leaves kInvariant_expInter, kVariant_expInter 
-    ? lBundle.fMC->Eval(mesonPt)
-    : lBundle.hMC->Interpolate(mesonPt);
-
-  auto calcWeight = [&PDGCode, &checkSanitizeAndReturnWeight, &lNomData, &lDenomMC]()
-  {
-    Double_t lWeight = lDenomMC
-      ? (lNomData > 0.)                  //     lDenomMC != 0   # normal
-        ? lNomData / lDenomMC            // n1) lNomData > 0 && lDenomMC !=0    # normal
-        : 0       // to signal problem   // e1) lNomData <= 0   # error. no reason why lNomData should be <=0. (it is a positive TF1 function)
-      : -1.;      // to signal problem   // e2) lDenomMC = 0    # at least strange since TH1::Interpolate() or my exponential interpolation is called. That means the TH1 would have to have two adjacent 0 content bins   
-                                         // => n1) can be negative, e2) always is negative
-  
-    // will reset to 1 and throw a warning if weight is not >=0 and finite
-    Double_t lWeightSanitized = checkSanitizeAndReturnWeight(lWeight, PDGCode);
-    return lWeightSanitized;
-  };
-  double lResult = calcWeight();
-  return lResult;
-}
 
 //_________________________________________________________________________
 Float_t AliConvEventCuts::GetWeightForMesonOld(Int_t index, AliMCEvent *mcEvent, AliVEvent *event){
