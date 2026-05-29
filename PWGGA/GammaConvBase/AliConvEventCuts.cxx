@@ -8532,7 +8532,7 @@ Float_t AliConvEventCuts::GetWeightForGamma(Int_t index, Double_t gammaPTrec, Al
     kCaseGen = 2;  // regular MC
 
 
-  if (kCaseGen == 0) return 1.;
+  if (kCaseGen == 0 && !fDoReweightHistoMCGamma) return 1.;
   if (kCaseGen == 1 && !IsParticleFromBGEvent(index, mcEvent, event)) return 1.;
 
   // get pdg code

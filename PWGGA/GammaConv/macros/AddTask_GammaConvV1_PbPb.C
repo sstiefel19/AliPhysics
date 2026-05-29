@@ -69,6 +69,7 @@ void AddTask_GammaConvV1_PbPb(
   TString fileNamePtWeights           = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FPTW:");
   TString fileNameMultWeights         = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FMUW:");
   TString fileNameMatBudWeights       = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FMAW:");
+  TString fileNameGammaPtWeights      = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FGPW:");
   TString fileNamedEdxPostCalib       = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FEPC:");
   TString fileNameCentFlattening      = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FCEF:");
   TString fileNameBDT                 = cuts.GetSpecialFileNameFromString (fileNameExternalInputs, "FBDT:");
@@ -5062,6 +5063,16 @@ void AddTask_GammaConvV1_PbPb(
         }
       }
       analysisEventCuts[i]->SetUseWeightMultiplicityFromFile(kTRUE, fileNameMultWeights, dataInputMultHisto, mcInputMultHisto );
+    }
+
+    if (fileNameGammaPtWeights.CompareTo("") != 0){
+      TString cutNumber = cuts.GetEventCut(i);
+      TString centCut = cutNumber(0,3);
+      TString dataInputGammaPtHisto = Form("pT_%s_%s", periodNameAnchor.Data(), centCut.Data());
+      TString mcInputGammaPtHisto = Form("pT_%s_%s", periodNameV0Reader.Data(), centCut.Data());
+      cout << "INFO enabling gamma pT weighting with data/MC histograms: " << dataInputGammaPtHisto.Data()
+           << " / " << mcInputGammaPtHisto.Data() << " from " << fileNameGammaPtWeights.Data() << endl;
+      analysisEventCuts[i]->SetUseGammaPtReweightingWithHistogramFromFile(kTRUE, fileNameGammaPtWeights, mcInputGammaPtHisto, dataInputGammaPtHisto);
     }
 
     TString histoNameMCPi0PT = "";

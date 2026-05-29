@@ -93,6 +93,7 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     void FillMultipleCountMap(map<Int_t,Int_t> &ma, Int_t tobechecked);
     void FillMultipleCountHistoAndClear(map<Int_t,Int_t> &ma, TH1F* hist);
     Double_t GetOriginalInvMass(const AliConversionPhotonBase * photon, AliVEvent * event) const;
+    Double_t GetGammaPtWeight(Int_t mcLabel, Double_t gammaPt) const;
     UInt_t IsTruePhotonESD          ( AliAODConversionPhoton *TruePhotonCandidate );
     UInt_t IsTruePhotonAOD          ( AliAODConversionPhoton *TruePhotonCandidate );
 
