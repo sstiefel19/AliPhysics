@@ -158,6 +158,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCAllGammaSingleProcess5ConvRAllPt(NULL),
   fHistoMCAllGammaSingleProcess5ConvZAllPt(NULL),
   fHistoMCAllGammaSingleProcess5SignPt(NULL),
+  fSparseMCAllGammaProcess5PtEtaRDaughter(NULL),
+  fSparseMCConvGammaPtEtaRDaughter(NULL),
   fHistoMCConvGammaR(NULL),
   fHistoMCConvGammaPtR(NULL),
   fHistoMCConvGammaEta(NULL),
@@ -550,6 +552,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCAllGammaSingleProcess5ConvRAllPt(NULL),
   fHistoMCAllGammaSingleProcess5ConvZAllPt(NULL),
   fHistoMCAllGammaSingleProcess5SignPt(NULL),
+  fSparseMCAllGammaProcess5PtEtaRDaughter(NULL),
+  fSparseMCConvGammaPtEtaRDaughter(NULL),
   fHistoMCConvGammaR(NULL),
   fHistoMCConvGammaPtR(NULL),
   fHistoMCConvGammaEta(NULL),
@@ -1926,6 +1930,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCAllGammaSingleProcess5ConvRAllPt = new TH2F*[fnCuts];
     fHistoMCAllGammaSingleProcess5ConvZAllPt = new TH2F*[fnCuts];
     fHistoMCAllGammaSingleProcess5SignPt = new TH2F*[fnCuts];
+    fSparseMCAllGammaProcess5PtEtaRDaughter = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaRDaughter = new THnSparseF*[fnCuts];
     fHistoTrueConvGammaPt              = new TH1F*[fnCuts];
     fHistoDoubleCountTrueConvGammaRPt  = new TH2F*[fnCuts];
     fHistoMultipleCountTrueConvGamma   = new TH1F*[fnCuts];
@@ -2204,6 +2210,33 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoMCAllGammaSingleProcess5SignPt[iCut]->GetYaxis()->SetBinLabel(2, "none");
         fHistoMCAllGammaSingleProcess5SignPt[iCut]->GetYaxis()->SetBinLabel(3, "e+ only");
         fMCList[iCut]->Add(fHistoMCAllGammaSingleProcess5SignPt[iCut]);
+
+        const Int_t nProcess5SparseBins[5] = {nBinsPt, 1000, 800, 200, 300};
+        const Double_t process5SparseXMin[5] = {arrPtBinning[0], -2., 0., 0., 0.};
+        const Double_t process5SparseXMax[5] = {arrPtBinning[nBinsPt], 2., 400., 5., 6.};
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut] =
+          new THnSparseF("MC_AllGamma_Process5_Pt_Eta_R_MinDaughterPt_MaxAbsDaughterEta",
+                         "MC_AllGamma_Process5_Pt_Eta_R_MinDaughterPt_MaxAbsDaughterEta",
+                         5, nProcess5SparseBins, process5SparseXMin, process5SparseXMax);
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->GetAxis(0)->Set(nBinsPt, arrPtBinning);
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->GetAxis(2)->SetTitle("R_{conv}^{MC} (cm)");
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->GetAxis(3)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
+        fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->GetAxis(4)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
+        fMCList[iCut]->Add(fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]);
+
+        fSparseMCConvGammaPtEtaRDaughter[iCut] =
+          new THnSparseF("MC_ConvGamma_Pt_Eta_R_MinDaughterPt_MaxAbsDaughterEta",
+                         "MC_ConvGamma_Pt_Eta_R_MinDaughterPt_MaxAbsDaughterEta",
+                         5, nProcess5SparseBins, process5SparseXMin, process5SparseXMax);
+        fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(0)->Set(nBinsPt, arrPtBinning);
+        fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(2)->SetTitle("R_{conv}^{MC} (cm)");
+        fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(3)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(4)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaRDaughter[iCut]);
       }
 
       if (fIsMC > 1){
@@ -2238,6 +2271,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
           fHistoMCAllGammaSingleProcess5ConvRAllPt[iCut]->Sumw2();
           fHistoMCAllGammaSingleProcess5ConvZAllPt[iCut]->Sumw2();
           fHistoMCAllGammaSingleProcess5SignPt[iCut]->Sumw2();
+          fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->Sumw2();
+          fSparseMCConvGammaPtEtaRDaughter[iCut]->Sumw2();
         }
       }
 
@@ -3924,6 +3959,14 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
               fHistoMCAllGammaENegConvRAllPt[fiCut]->Fill(particle->Pt(), rENeg, totalPhotonWeight);
               fHistoMCAllGammaEPosConvZAllPt[fiCut]->Fill(particle->Pt(), ePosProcess5->Zv(), totalPhotonWeight);
               fHistoMCAllGammaENegConvZAllPt[fiCut]->Fill(particle->Pt(), eNegProcess5->Zv(), totalPhotonWeight);
+              const Double_t process5SparseValues[5] = {
+                particle->Pt(),
+                particle->Eta(),
+                0.5 * (rEPos + rENeg),
+                TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt()),
+                TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta()))
+              };
+              fSparseMCAllGammaProcess5PtEtaRDaughter[fiCut]->Fill(process5SparseValues, totalPhotonWeight);
             } else if (ePosProcess5 || eNegProcess5) {
               fHistoMCAllGammaDaughterStatusPt[fiCut]->Fill(particle->Pt(), 6., totalPhotonWeight);
               AliAODMCParticle* singleProcess5Daughter = ePosProcess5 ? ePosProcess5 : eNegProcess5;
@@ -3972,24 +4015,45 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
         // same as above but not also reject if photon does not convert OR if conversion daughters are outside acceptance
         if(fiPhotonCut->PhotonIsSelectedAODMC(particle,fAODMCTrackArray,kTRUE /*checkForConvertedGamma*/)){
           Double_t rConv = 0;
+          AliAODMCParticle* ePosProcess5 = NULL;
+          AliAODMCParticle* eNegProcess5 = NULL;
           for(Int_t daughterIndex=particle->GetDaughterLabel(0);daughterIndex<=particle->GetDaughterLabel(1);daughterIndex++){
             AliAODMCParticle *tmpDaughter = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(daughterIndex));
             if(!tmpDaughter) continue;
             if(TMath::Abs(tmpDaughter->GetPdgCode()) == 11){
               rConv = sqrt( (tmpDaughter->Xv()*tmpDaughter->Xv()) + (tmpDaughter->Yv()*tmpDaughter->Yv()) );
+              if (tmpDaughter->GetMCProcessCode() == 5) {
+                if (tmpDaughter->GetPdgCode() == 11) {
+                  eNegProcess5 = tmpDaughter;
+                } else if (tmpDaughter->GetPdgCode() == -11) {
+                  ePosProcess5 = tmpDaughter;
+                }
+              }
             }
           }
-	          Float_t photonWeight = GetPhotonWeight(particle);
-	          Float_t totalPhotonWeight = fWeightJetJetMC*photonWeight;
-	          fHistoMCConvGammaPt[fiCut]->Fill(particle->Pt(),totalPhotonWeight);
-	          if (fDoPhotonQA > 0) {
-	            Float_t weightMatBudgetGamma = 1.;
-	            if (fDoMaterialBudgetWeightingOfGammasForTrueMesons && fiPhotonCut->GetMaterialBudgetWeightsInitialized()) {
-	              weightMatBudgetGamma = fiPhotonCut->GetMaterialBudgetCorrectingWeightForTrueGamma(rConv, particle->Pt(), fInputEvent->GetMagneticField());
-	            }
-	            fHistoMCConvGammaPtMatBudWeights[fiCut]->Fill(particle->Pt(), totalPhotonWeight*weightMatBudgetGamma);
-	          }
-	          if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          Float_t photonWeight = GetPhotonWeight(particle);
+          Float_t totalPhotonWeight = fWeightJetJetMC*photonWeight;
+          fHistoMCConvGammaPt[fiCut]->Fill(particle->Pt(),totalPhotonWeight);
+          if (fDoPhotonQA > 0) {
+            Float_t weightMatBudgetGamma = 1.;
+            if (fDoMaterialBudgetWeightingOfGammasForTrueMesons && fiPhotonCut->GetMaterialBudgetWeightsInitialized()) {
+              weightMatBudgetGamma = fiPhotonCut->GetMaterialBudgetCorrectingWeightForTrueGamma(rConv, particle->Pt(), fInputEvent->GetMagneticField());
+            }
+            fHistoMCConvGammaPtMatBudWeights[fiCut]->Fill(particle->Pt(), totalPhotonWeight*weightMatBudgetGamma);
+          }
+          if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          if (fDoPhotonQA > 0 && ePosProcess5 && eNegProcess5) {
+            const Double_t rEPos = TMath::Sqrt(ePosProcess5->Xv() * ePosProcess5->Xv() + ePosProcess5->Yv() * ePosProcess5->Yv());
+            const Double_t rENeg = TMath::Sqrt(eNegProcess5->Xv() * eNegProcess5->Xv() + eNegProcess5->Yv() * eNegProcess5->Yv());
+            const Double_t process5SparseValues[5] = {
+              particle->Pt(),
+              particle->Eta(),
+              0.5 * (rEPos + rENeg),
+              TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt()),
+              TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta()))
+            };
+            fSparseMCConvGammaPtEtaRDaughter[fiCut]->Fill(process5SparseValues, totalPhotonWeight);
+          }
           if ( fDoPhotonQA > 0 && fIsMC < 2){
             fHistoMCConvGammaR[fiCut]->Fill(rConv,totalPhotonWeight);
             fHistoMCConvGammaPtR[fiCut]->Fill(particle->Pt(),rConv,totalPhotonWeight);
