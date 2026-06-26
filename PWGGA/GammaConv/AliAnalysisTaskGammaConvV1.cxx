@@ -150,6 +150,7 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCAllGammaDaughterPt(NULL),
   fHistoMCAllGammaDaughterEta(NULL),
   fHistoMCAllGammaNDaughtersPt(NULL),
+  fHistoMCAllGammaNDaughtersPtEta(NULL),
   fHistoMCAllGammaDaughterElectronProcessPt(NULL),
   fHistoMCAllGammaEPosConvRAllPt(NULL),
   fHistoMCAllGammaENegConvRAllPt(NULL),
@@ -544,6 +545,7 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCAllGammaDaughterPt(NULL),
   fHistoMCAllGammaDaughterEta(NULL),
   fHistoMCAllGammaNDaughtersPt(NULL),
+  fHistoMCAllGammaNDaughtersPtEta(NULL),
   fHistoMCAllGammaDaughterElectronProcessPt(NULL),
   fHistoMCAllGammaEPosConvRAllPt(NULL),
   fHistoMCAllGammaENegConvRAllPt(NULL),
@@ -1922,6 +1924,7 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCAllGammaDaughterPt         = new TH2F*[fnCuts];
     fHistoMCAllGammaDaughterEta        = new TH2F*[fnCuts];
     fHistoMCAllGammaNDaughtersPt       = new TH2F*[fnCuts];
+    fHistoMCAllGammaNDaughtersPtEta    = new TH3F*[fnCuts];
     fHistoMCAllGammaDaughterElectronProcessPt = new TH2F*[fnCuts];
     fHistoMCAllGammaEPosConvRAllPt     = new TH2F*[fnCuts];
     fHistoMCAllGammaENegConvRAllPt     = new TH2F*[fnCuts];
@@ -2175,6 +2178,10 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
                                                       "MC_AllGamma_NDaughters_Pt",
                                                       nBinsPt, arrPtBinning, 20, -0.5, 19.5);
         fMCList[iCut]->Add(fHistoMCAllGammaNDaughtersPt[iCut]);
+        fHistoMCAllGammaNDaughtersPtEta[iCut] = new TH3F("MC_AllGamma_NDaughters_Pt_Eta",
+                                                         "MC_AllGamma_NDaughters_Pt_Eta",
+                                                         nBinsPt, arrPtBinning, 1000, -2, 2, 20, -0.5, 19.5);
+        fMCList[iCut]->Add(fHistoMCAllGammaNDaughtersPtEta[iCut]);
         fHistoMCAllGammaDaughterElectronProcessPt[iCut] = new TH2F("MC_AllGamma_DaughterElectronProcess_Pt",
                                                                    "MC_AllGamma_DaughterElectronProcess_Pt",
                                                                    nBinsPt, arrPtBinning, 100, -0.5, 99.5);
@@ -2263,6 +2270,7 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
           fHistoMCAllGammaDaughterPt[iCut]->Sumw2();
           fHistoMCAllGammaDaughterEta[iCut]->Sumw2();
           fHistoMCAllGammaNDaughtersPt[iCut]->Sumw2();
+          fHistoMCAllGammaNDaughtersPtEta[iCut]->Sumw2();
           fHistoMCAllGammaDaughterElectronProcessPt[iCut]->Sumw2();
           fHistoMCAllGammaEPosConvRAllPt[iCut]->Sumw2();
           fHistoMCAllGammaENegConvRAllPt[iCut]->Sumw2();
@@ -3908,6 +3916,7 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
             const Int_t nDaughters = particle->GetNDaughters();
             fHistoMCAllGammaDaughterStatusPt[fiCut]->Fill(particle->Pt(), 0., totalPhotonWeight);
             fHistoMCAllGammaNDaughtersPt[fiCut]->Fill(particle->Pt(), nDaughters, totalPhotonWeight);
+            fHistoMCAllGammaNDaughtersPtEta[fiCut]->Fill(particle->Pt(), particle->Eta(), nDaughters, totalPhotonWeight);
             if (nDaughters < 1) {
               fHistoMCAllGammaDaughterStatusPt[fiCut]->Fill(particle->Pt(), 1., totalPhotonWeight);
             } else if (nDaughters == 1) {
