@@ -2178,9 +2178,15 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
                                                       "MC_AllGamma_NDaughters_Pt",
                                                       nBinsPt, arrPtBinning, 20, -0.5, 19.5);
         fMCList[iCut]->Add(fHistoMCAllGammaNDaughtersPt[iCut]);
+        Double_t arrEtaBinningMCAllGammaNDaughters[1001];
+        for (Int_t iEtaBin = 0; iEtaBin <= 1000; ++iEtaBin) arrEtaBinningMCAllGammaNDaughters[iEtaBin] = -2. + 4. * iEtaBin / 1000.;
+        Double_t arrNDaughtersBinningMCAllGamma[21];
+        for (Int_t iDaughterBin = 0; iDaughterBin <= 20; ++iDaughterBin) arrNDaughtersBinningMCAllGamma[iDaughterBin] = -0.5 + iDaughterBin;
         fHistoMCAllGammaNDaughtersPtEta[iCut] = new TH3F("MC_AllGamma_NDaughters_Pt_Eta",
                                                          "MC_AllGamma_NDaughters_Pt_Eta",
-                                                         nBinsPt, arrPtBinning, 1000, -2, 2, 20, -0.5, 19.5);
+                                                         nBinsPt, arrPtBinning,
+                                                         1000, arrEtaBinningMCAllGammaNDaughters,
+                                                         20, arrNDaughtersBinningMCAllGamma);
         fMCList[iCut]->Add(fHistoMCAllGammaNDaughtersPtEta[iCut]);
         fHistoMCAllGammaDaughterElectronProcessPt[iCut] = new TH2F("MC_AllGamma_DaughterElectronProcess_Pt",
                                                                    "MC_AllGamma_DaughterElectronProcess_Pt",
