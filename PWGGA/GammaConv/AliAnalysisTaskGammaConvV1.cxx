@@ -128,6 +128,10 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCHeaders(NULL),
   fHistoMCAllGammaPt(NULL),
   fHistoMCAllGammaMCPtMCEta(NULL),
+  fHistoMCAllGammaPtFine(NULL),
+  fHistoMCAllGammaMCPtMCEtaFine(NULL),
+  fHistoMCAllGammaPtFineNoPhotonWeights(NULL),
+  fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCAllGammaPtNotTriggered(NULL),
   fHistoMCAllGammaPtNoVertex(NULL),
   fHistoMCAllSecondaryGammaPt(NULL),
@@ -141,6 +145,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCConvGammaPt(NULL),
   fHistoMCConvGammaPtMatBudWeights(NULL),
   fHistoMCConvGammaMCPtMCEta(NULL),
+  fHistoMCConvGammaMCPtMCEtaFine(NULL),
+  fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCSecondaryConvGammaPt(NULL),
   fHistoMCConvGammaSelectionAODPt(NULL),
   fHistoMCAllGammaDaughterStatusPt(NULL),
@@ -523,6 +529,10 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCHeaders(NULL),
   fHistoMCAllGammaPt(NULL),
   fHistoMCAllGammaMCPtMCEta(NULL),
+  fHistoMCAllGammaPtFine(NULL),
+  fHistoMCAllGammaMCPtMCEtaFine(NULL),
+  fHistoMCAllGammaPtFineNoPhotonWeights(NULL),
+  fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCAllGammaPtNotTriggered(NULL),
   fHistoMCAllGammaPtNoVertex(NULL),
   fHistoMCAllSecondaryGammaPt(NULL),
@@ -536,6 +546,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCConvGammaPt(NULL),
   fHistoMCConvGammaPtMatBudWeights(NULL),
   fHistoMCConvGammaMCPtMCEta(NULL),
+  fHistoMCConvGammaMCPtMCEtaFine(NULL),
+  fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCSecondaryConvGammaPt(NULL),
   fHistoMCConvGammaSelectionAODPt(NULL),
   fHistoMCAllGammaDaughterStatusPt(NULL),
@@ -1206,6 +1218,14 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
   for (Int_t i = 1; i <= 10; ++i) {
     arrPtBinningFine[142+i] = 15.0 + 1.0*i;
   }
+
+  std::vector<Double_t> arrPtBinningFineLowPt;
+  arrPtBinningFineLowPt.reserve(nBinsPt + 101);
+  for (Int_t i = 0; i <= 100; ++i) arrPtBinningFineLowPt.push_back(0.01 * i);
+  for (Int_t i = 1; i <= nBinsPt; ++i) {
+    if (arrPtBinning[i] > 1.) arrPtBinningFineLowPt.push_back(arrPtBinning[i]);
+  }
+  const Int_t nBinsPtFineLowPt = arrPtBinningFineLowPt.size() - 1;
   if (fIsMC == 2){
     fDoPhotonQA           = 0;
     fDoTHnSparse          = kFALSE;
@@ -1902,6 +1922,10 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCHeaders    		  = new TH1I*[fnCuts];
     fHistoMCAllGammaPt                 = new TH1F*[fnCuts];
     fHistoMCAllGammaMCPtMCEta          = new TH2F*[fnCuts];
+    fHistoMCAllGammaPtFine             = new TH1F*[fnCuts];
+    fHistoMCAllGammaMCPtMCEtaFine      = new TH2F*[fnCuts];
+    fHistoMCAllGammaPtFineNoPhotonWeights = new TH1F*[fnCuts];
+    fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights = new TH2F*[fnCuts];
     fHistoMCAllGammaPtNotTriggered     = new TH1F*[fnCuts];
     fHistoMCAllGammaPtNoVertex         = new TH1F*[fnCuts];
     fHistoMCAllSecondaryGammaPt        = new TH2F*[fnCuts];
@@ -1915,6 +1939,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCConvGammaPt                = new TH1F*[fnCuts];
     fHistoMCConvGammaPtMatBudWeights   = new TH1F*[fnCuts];
     fHistoMCConvGammaMCPtMCEta         = new TH2F*[fnCuts];
+    fHistoMCConvGammaMCPtMCEtaFine     = new TH2F*[fnCuts];
+    fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights = new TH2F*[fnCuts];
     fHistoMCSecondaryConvGammaPt       = new TH2F*[fnCuts];
     fHistoMCConvGammaSelectionAODPt    = new TH2F*[fnCuts];
     fHistoMCAllGammaDaughterStatusPt   = new TH2F*[fnCuts];
@@ -2083,9 +2109,17 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
       }
       fHistoMCAllGammaPt[iCut]             = new TH1F("MC_AllGamma_Pt", "MC_AllGamma_Pt", nBinsPt, arrPtBinning);
       fMCList[iCut]->Add(fHistoMCAllGammaPt[iCut]);
+      fHistoMCAllGammaPtFine[iCut]         = new TH1F("MC_AllGamma_Pt_Fine", "MC_AllGamma_Pt_Fine", nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+      fMCList[iCut]->Add(fHistoMCAllGammaPtFine[iCut]);
+      fHistoMCAllGammaPtFineNoPhotonWeights[iCut] = new TH1F("MC_AllGamma_Pt_Fine_NoPhotonWeights", "MC_AllGamma_Pt_Fine_NoPhotonWeights", nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+      fMCList[iCut]->Add(fHistoMCAllGammaPtFineNoPhotonWeights[iCut]);
       if (fDoPhotonQA > 0) {
         fHistoMCAllGammaMCPtMCEta[iCut]    = new TH2F("MC_AllGamma_MCPt_MCEta", "MC_AllGamma_MCPt_MCEta", nBinsPt, arrPtBinning, 1000, -2, 2);
         fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEta[iCut]);
+        fHistoMCAllGammaMCPtMCEtaFine[iCut] = new TH2F("MC_AllGamma_MCPt_MCEta_Fine", "MC_AllGamma_MCPt_MCEta_Fine", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
+        fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEtaFine[iCut]);
+        fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[iCut] = new TH2F("MC_AllGamma_MCPt_MCEta_Fine_NoPhotonWeights", "MC_AllGamma_MCPt_MCEta_Fine_NoPhotonWeights", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
+        fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[iCut]);
       }
       fHistoMCAllGammaPtNotTriggered[iCut]             = new TH1F("MC_AllGamma_Pt_NotTriggered", "MC_AllGamma_Pt_NotTriggered", nBinsPt, arrPtBinning);
       fMCList[iCut]->Add(fHistoMCAllGammaPtNotTriggered[iCut]);
@@ -2120,6 +2154,10 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fMCList[iCut]->Add(fHistoMCConvGammaPtMatBudWeights[iCut]);
         fHistoMCConvGammaMCPtMCEta[iCut]   = new TH2F("MC_ConvGamma_MCPt_MCEta", "MC_ConvGamma_MCPt_MCEta", nBinsPt, arrPtBinning, 1000, -2, 2);
         fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEta[iCut]);
+        fHistoMCConvGammaMCPtMCEtaFine[iCut] = new TH2F("MC_ConvGamma_MCPt_MCEta_Fine", "MC_ConvGamma_MCPt_MCEta_Fine", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
+        fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEtaFine[iCut]);
+        fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[iCut] = new TH2F("MC_ConvGamma_MCPt_MCEta_Fine_NoPhotonWeights", "MC_ConvGamma_MCPt_MCEta_Fine_NoPhotonWeights", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
+        fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[iCut]);
       }
       fHistoMCSecondaryConvGammaPt[iCut]  = new TH2F("MC_SecondaryConvGamma_Pt", "MC_SecondaryConvGamma_Pt", nBinsPt, arrPtBinning, 4, -0.5, 3.5);
       fHistoMCSecondaryConvGammaPt[iCut]->GetYaxis()->SetBinLabel(1,"K0s");
@@ -2255,6 +2293,10 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
       if (fIsMC > 1){
         fHistoMCAllGammaPt[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEta[iCut]->Sumw2();
+        fHistoMCAllGammaPtFine[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFine[iCut]->Sumw2();
+        fHistoMCAllGammaPtFineNoPhotonWeights[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[iCut]->Sumw2();
         fHistoMCAllSecondaryGammaPt[iCut]->Sumw2();
         fHistoMCDecayGammaPi0Pt[iCut]->Sumw2();
         fHistoMCDecayGammaRhoPt[iCut]->Sumw2();
@@ -2266,6 +2308,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoMCConvGammaPt[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCConvGammaPtMatBudWeights[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEta[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEtaFine[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[iCut]->Sumw2();
         fHistoMCSecondaryConvGammaPt[iCut]->Sumw2();
         if (fDoPhotonQA > 0) {
           fHistoMCConvGammaSelectionAODPt[iCut]->Sumw2();
@@ -3907,7 +3951,13 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
           Float_t photonWeight = GetPhotonWeight(particle);
           Float_t totalPhotonWeight = fWeightJetJetMC*photonWeight;
           fHistoMCAllGammaPt[fiCut]->Fill(particle->Pt(),totalPhotonWeight); // All MC Gamma
-          if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          fHistoMCAllGammaPtFine[fiCut]->Fill(particle->Pt(),totalPhotonWeight);
+          if (fDoPhotonQA > 0) {
+            fHistoMCAllGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+            fHistoMCAllGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          }
+          fHistoMCAllGammaPtFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),fWeightJetJetMC);
+          if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
           if (fDoPhotonQA > 0) {
             const Int_t aodMCConvGammaSelectionCategory = fiPhotonCut->GetAODMCConversionPhotonSelectionCategory(particle, fAODMCTrackArray);
             fHistoMCConvGammaSelectionAODPt[fiCut]->Fill(particle->Pt(), 0., totalPhotonWeight);
@@ -4056,7 +4106,11 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
             }
             fHistoMCConvGammaPtMatBudWeights[fiCut]->Fill(particle->Pt(), totalPhotonWeight*weightMatBudgetGamma);
           }
-          if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          if (fDoPhotonQA > 0) {
+            fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+            fHistoMCConvGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+            fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
+          }
           if (fDoPhotonQA > 0 && ePosProcess5 && eNegProcess5) {
             const Double_t rEPos = TMath::Sqrt(ePosProcess5->Xv() * ePosProcess5->Xv() + ePosProcess5->Yv() * ePosProcess5->Yv());
             const Double_t rENeg = TMath::Sqrt(eNegProcess5->Xv() * eNegProcess5->Xv() + eNegProcess5->Yv() * eNegProcess5->Yv());
@@ -4320,7 +4374,13 @@ void AliAnalysisTaskGammaConvV1::ProcessMCParticles(int isCurrentEventSelected)
       if(fiPhotonCut->PhotonIsSelectedMC(particle,fMCEvent,kFALSE)){
         Float_t totalPhotonWeight = fWeightJetJetMC;
         fHistoMCAllGammaPt[fiCut]->Fill(particle->Pt(),totalPhotonWeight); // All MC Gamma
-        if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+        fHistoMCAllGammaPtFine[fiCut]->Fill(particle->Pt(),totalPhotonWeight);
+        if (fDoPhotonQA > 0) {
+          fHistoMCAllGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          fHistoMCAllGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+        }
+        fHistoMCAllGammaPtFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),fWeightJetJetMC);
+        if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
         if(isCurrentEventSelected == 1){
           fHistoMCAllGammaPtNotTriggered[fiCut]->Fill(particle->Pt(),totalPhotonWeight);
         } else if(isCurrentEventSelected == 2){
@@ -4364,7 +4424,11 @@ void AliAnalysisTaskGammaConvV1::ProcessMCParticles(int isCurrentEventSelected)
           }
           fHistoMCConvGammaPtMatBudWeights[fiCut]->Fill(particle->Pt(), totalPhotonWeight*weightMatBudgetGamma);
         }
-        if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+        if (fDoPhotonQA > 0) {
+          fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          fHistoMCConvGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+          fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
+        }
         if (fDoPhotonQA > 0 && fIsMC < 2){
           fHistoMCConvGammaR[fiCut]->Fill(((AliMCParticle*)fMCEvent->GetTrack(particle->GetDaughterFirst()))->Particle()->R(),totalPhotonWeight);
           fHistoMCConvGammaEta[fiCut]->Fill(particle->Eta(),totalPhotonWeight);

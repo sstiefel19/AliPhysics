@@ -189,6 +189,10 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH1I**                            fHistoMCHeaders;                                 //!
     TH1F**                            fHistoMCAllGammaPt;                              //!
     TH2F**                            fHistoMCAllGammaMCPtMCEta;                       //!
+    TH1F**                            fHistoMCAllGammaPtFine;                          //!
+    TH2F**                            fHistoMCAllGammaMCPtMCEtaFine;                   //!
+    TH1F**                            fHistoMCAllGammaPtFineNoPhotonWeights;          //!
+    TH2F**                            fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights;   //!
     TH1F**                            fHistoMCAllGammaPtNotTriggered;                  //!
     TH1F**                            fHistoMCAllGammaPtNoVertex;                      //!
     TH2F**                            fHistoMCAllSecondaryGammaPt;                     //!
@@ -202,6 +206,8 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH1F**                            fHistoMCConvGammaPt;                             //!
     TH1F**                            fHistoMCConvGammaPtMatBudWeights;                //!
     TH2F**                            fHistoMCConvGammaMCPtMCEta;                      //!
+    TH2F**                            fHistoMCConvGammaMCPtMCEtaFine;                  //!
+    TH2F**                            fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights;   //!
     TH2F**                            fHistoMCSecondaryConvGammaPt;                    //!
     TH2F**                            fHistoMCConvGammaSelectionAODPt;                 //!
     TH2F**                            fHistoMCAllGammaDaughterStatusPt;                //!
