@@ -98,6 +98,7 @@ AliV0ReaderV1::AliV0ReaderV1(const char *name) : AliAODRelabelInterface(name),
   fRelabelAODs(kFALSE),
   fPreviousV0ReaderPerformsAODRelabeling(0),
   fErrorAODRelabeling(kFALSE),
+  fAllowMissingAODConversionGammasForMCDiagnostics(kFALSE),
   fEventIsSelected(kFALSE),
   fNumberOfPrimaryTracks(0),
   fNumberOfTPCoutTracks(0),
@@ -1299,8 +1300,12 @@ Bool_t AliV0ReaderV1::GetAODConversionGammas(){
     FindDeltaAODBranchName();
     fInputGammas=dynamic_cast<TClonesArray*>(fAODEvent->FindListObject(fDeltaAODBranchName.Data()));}
   if(!fInputGammas){
-    AliError("No Gamma Satellites found");
-    return kFALSE;}
+    if(!fAllowMissingAODConversionGammasForMCDiagnostics){
+      AliError("No Gamma Satellites found");
+      return kFALSE;}
+    AliWarning("No Gamma Satellites found. Continuing with an empty reconstructed-gamma list for MC-only AOD diagnostics.");
+    fConversionGammas->Delete();
+    return kTRUE;}
 
   // Apply Selection Cuts to Gammas and create local working copy
   Bool_t relabelingWorkedForAll = kTRUE;
@@ -1316,8 +1321,13 @@ Bool_t AliV0ReaderV1::GetAODConversionGammas(){
       new((*fConversionGammas)[fConversionGammas->GetEntriesFast()]) AliAODConversionPhoton(*gamma);}
   }
   if(!relabelingWorkedForAll){
-    AliError("For one or more photon candidate the AOD daughters could not be found. The labels of those were set to -999999 and the event will get rejected.");
-    return kFALSE;
+    if(!fAllowMissingAODConversionGammasForMCDiagnostics){
+      AliError("For one or more photon candidate the AOD daughters could not be found. The labels of those were set to -999999 and the event will get rejected.");
+      return kFALSE;
+    }
+    AliWarning("For one or more photon candidate the AOD daughters could not be found. Dropping reconstructed-gamma candidates and continuing for MC-only AOD diagnostics.");
+    fConversionGammas->Delete();
+    return kTRUE;
   }
 
   return kTRUE;

@@ -125,6 +125,8 @@ class AliV0ReaderV1 : public AliAODRelabelInterface {
     int                IsReaderPerformingRelabeling() const override    {return fPreviousV0ReaderPerformsAODRelabeling;}
     Bool_t             RelabelAODPhotonCandidates(AliAODConversionPhoton *PhotonCandidate);
     Bool_t             GetErrorAODRelabeling()                          {return fErrorAODRelabeling;}
+    void               SetAllowMissingAODConversionGammasForMCDiagnostics(Bool_t allow=kTRUE) {fAllowMissingAODConversionGammasForMCDiagnostics=allow; return;}
+    Bool_t             GetAllowMissingAODConversionGammasForMCDiagnostics() const {return fAllowMissingAODConversionGammasForMCDiagnostics;}
     void               SetPeriodName(TString name)                      {fPeriodName = name;
                                                                          AliInfo(Form("Set PeriodName to: %s",fPeriodName.Data()));
                                                                          return;}
@@ -216,6 +218,7 @@ class AliV0ReaderV1 : public AliAODRelabelInterface {
     Bool_t         fRelabelAODs;                  //
     Int_t          fPreviousV0ReaderPerformsAODRelabeling; //! 0->not set, meaning V0Reader has not yet determined if it should do AODRelabeling, 1-> V0Reader perfomrs relabeling, 2-> previous V0Reader in list perfomrs relabeling
     Bool_t         fErrorAODRelabeling;           //! to remember if for the current event an error occured  while retrieving and relabeling of the gammas
+    Bool_t         fAllowMissingAODConversionGammasForMCDiagnostics; // allow MC-only diagnostics on AODs without usable GammaConversion satellites
     Bool_t         fEventIsSelected;              //!
     Int_t          fNumberOfPrimaryTracks;        //! Number of Primary Tracks in AOD or ESD
     Int_t          fNumberOfTPCoutTracks;         //! Number of TPC Tracks with TPCout flag
@@ -293,7 +296,7 @@ class AliV0ReaderV1 : public AliAODRelabelInterface {
     AliV0ReaderV1 &operator=(const AliV0ReaderV1 &ref);
 
 
-    ClassDef(AliV0ReaderV1, 27)
+    ClassDef(AliV0ReaderV1, 28)
 
 };
 

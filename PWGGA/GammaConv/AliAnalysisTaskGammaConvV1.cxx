@@ -2178,9 +2178,13 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
                                                       "MC_AllGamma_NDaughters_Pt",
                                                       nBinsPt, arrPtBinning, 20, -0.5, 19.5);
         fMCList[iCut]->Add(fHistoMCAllGammaNDaughtersPt[iCut]);
+        Double_t arrEtaBinning[1001];
+        Double_t arrNDaughterBinning[21];
+        for (Int_t iBin = 0; iBin < 1001; iBin++) arrEtaBinning[iBin] = -2. + iBin*0.004;
+        for (Int_t iBin = 0; iBin < 21; iBin++) arrNDaughterBinning[iBin] = -0.5 + iBin;
         fHistoMCAllGammaNDaughtersPtEta[iCut] = new TH3F("MC_AllGamma_NDaughters_Pt_Eta",
                                                          "MC_AllGamma_NDaughters_Pt_Eta",
-                                                         nBinsPt, arrPtBinning, 1000, -2, 2, 20, -0.5, 19.5);
+                                                         nBinsPt, arrPtBinning, 1000, arrEtaBinning, 20, arrNDaughterBinning);
         fMCList[iCut]->Add(fHistoMCAllGammaNDaughtersPtEta[iCut]);
         fHistoMCAllGammaDaughterElectronProcessPt[iCut] = new TH2F("MC_AllGamma_DaughterElectronProcess_Pt",
                                                                    "MC_AllGamma_DaughterElectronProcess_Pt",
@@ -2899,7 +2903,8 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
   }
 
   Int_t eventQuality = ((AliConvEventCuts*)fV0Reader->GetEventCuts())->GetEventQuality();
-  if(fInputEvent->IsIncompleteDAQ()==kTRUE || fV0Reader->GetErrorAODRelabeling()) eventQuality = 2;  // incomplete event or relabeling failed
+  if(fInputEvent->IsIncompleteDAQ()==kTRUE ||
+     (fV0Reader->GetErrorAODRelabeling() && !fV0Reader->GetAllowMissingAODConversionGammasForMCDiagnostics())) eventQuality = 2;  // incomplete event or relabeling failed
   // Event Not Accepted due to MC event missing or because it is incomplete or  wrong trigger for V0ReaderV1 => skip broken events/files
   if(eventQuality == 2 || eventQuality == 3){
     // write out name of broken file if it has not been done already
@@ -3062,6 +3067,43 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
           fiEventCut->GetNotRejectedParticles(fiEventCut->GetSignalRejection(),
                                               fiEventCut->GetAcceptedHeader(),
                                               fInputEvent);
+        }
+        if (fiEventCut && fiEventCut->GetCutNumber().BeginsWith("15910023")) {
+          AliInfo(Form("AODMCDBG ranges cut=%s rejection=%d nHeaders=%d",
+                       fiEventCut->GetCutNumber().Data(),
+                       fiEventCut->GetSignalRejection(),
+                       fiEventCut->GetNAcceptedHeaders()));
+          if (fiEventCut->GetAcceptedHeader()) {
+            AliInfo(Form("AODMCDBG acceptedHeaderList entries=%d", fiEventCut->GetAcceptedHeader()->GetEntries()));
+            for (Int_t iDbgAccepted = 0; iDbgAccepted < fiEventCut->GetAcceptedHeader()->GetEntries(); ++iDbgAccepted) {
+              AliInfo(Form("AODMCDBG acceptedHeader[%d]=%s",
+                           iDbgAccepted,
+                           ((TObjString*)fiEventCut->GetAcceptedHeader()->At(iDbgAccepted))->GetString().Data()));
+            }
+          } else {
+            AliInfo("AODMCDBG acceptedHeaderList=null");
+          }
+          if (fInputEvent && fInputEvent->IsA()==AliAODEvent::Class()) {
+            AliAODMCHeader* dbgAODHeader = dynamic_cast<AliAODMCHeader*>(fInputEvent->FindListObject(AliAODMCHeader::StdBranchName()));
+            TList* dbgGenHeaders = dbgAODHeader ? dbgAODHeader->GetCocktailHeaders() : NULL;
+            AliInfo(Form("AODMCDBG eventHeaderList entries=%d", dbgGenHeaders ? dbgGenHeaders->GetEntries() : -1));
+            if (dbgGenHeaders) {
+              for (Int_t iDbgEventHeader = 0; iDbgEventHeader < dbgGenHeaders->GetEntries(); ++iDbgEventHeader) {
+                AliGenEventHeader* dbgGH = (AliGenEventHeader*)dbgGenHeaders->At(iDbgEventHeader);
+                AliInfo(Form("AODMCDBG eventHeader[%d]=%s nProduced=%d",
+                             iDbgEventHeader,
+                             dbgGH ? dbgGH->GetName() : "null",
+                             dbgGH ? dbgGH->NProduced() : -1));
+              }
+            }
+          }
+          for (Int_t iDbgHeader = 0; iDbgHeader < fiEventCut->GetNAcceptedHeaders(); ++iDbgHeader) {
+            AliInfo(Form("AODMCDBG range[%d] name=%s start=%d end=%d",
+                         iDbgHeader,
+                         fiEventCut->GetAcceptedHeaderNames()[iDbgHeader].Data(),
+                         fiEventCut->GetAcceptedHeaderStart(iDbgHeader),
+                         fiEventCut->GetAcceptedHeaderEnd(iDbgHeader)));
+          }
         }
 
         /* todo: don't do this for each event. How are differing bin labels even merged?
@@ -3867,6 +3909,14 @@ void AliAnalysisTaskGammaConvV1::ProcessTruePhotonCandidates(AliAODConversionPho
 }
 void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelected)
 {
+  Long64_t dbgNTracks = fAODMCTrackArray ? fAODMCTrackArray->GetEntriesFast() : -1;
+  Long64_t dbgNPhotonRaw = 0;
+  Long64_t dbgNPhotonHeader = 0;
+  Long64_t dbgNPhotonPrimary = 0;
+  Long64_t dbgNPhotonHeaderPrimary = 0;
+  Long64_t dbgNPhotonSelected = 0;
+  Long64_t dbgNPhotonConvSelected = 0;
+
   const AliVVertex* primVtxMC   = fMCEvent->GetPrimaryVertex();
   Double_t mcProdVtxX   = primVtxMC->GetX();
   Double_t mcProdVtxY   = primVtxMC->GetY();
@@ -3874,6 +3924,9 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
 
   // Check if MC generated particles should be filled for this event using the selected trigger
   if( !((AliConvEventCuts*)fEventCutArray->At(fiCut))->IsMCTriggerSelected(fInputEvent, fMCEvent)){
+    AliInfo(Form("AODMCDBG cut=%s tracks=%lld rejected_by_IsMCTriggerSelected=1",
+                 fiEventCut ? fiEventCut->GetCutNumber().Data() : "null",
+                 dbgNTracks));
     return;
   }
 
@@ -3884,8 +3937,22 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
       AliAODMCParticle* particle = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(i));
       if (!particle) continue;
 
+      const Bool_t dbgIsPhoton = (particle->GetPdgCode() == 22);
+      Int_t dbgHeaderAccepted = 2;
+      if(fiEventCut->GetSignalRejection() != 0){
+        dbgHeaderAccepted = fiEventCut->IsParticleFromBGEvent(i, fMCEvent, fInputEvent);
+      }
+      if (dbgIsPhoton) {
+        ++dbgNPhotonRaw;
+        if (dbgHeaderAccepted != 0) ++dbgNPhotonHeader;
+      }
+
       Bool_t isPrimary = fiEventCut->IsConversionPrimaryAOD(fInputEvent, particle, mcProdVtxX, mcProdVtxY, mcProdVtxZ);
       if (isPrimary){
+        if (dbgIsPhoton) {
+          ++dbgNPhotonPrimary;
+          if (dbgHeaderAccepted != 0) ++dbgNPhotonHeaderPrimary;
+        }
 
         Int_t isMCFromMBHeader = -1;
         if(fiEventCut->GetSignalRejection() != 0){
@@ -3898,6 +3965,7 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
         
         // returns 0 for non-photons or rejected photons, photon daughters don't play a role
         if(fiPhotonCut->PhotonIsSelectedAODMC(particle,fAODMCTrackArray,kFALSE /*checkForConvertedGamma*/ )){
+          ++dbgNPhotonSelected;
           Float_t photonWeight = GetPhotonWeight(particle);
           Float_t totalPhotonWeight = fWeightJetJetMC*photonWeight;
           fHistoMCAllGammaPt[fiCut]->Fill(particle->Pt(),totalPhotonWeight); // All MC Gamma
@@ -4023,6 +4091,7 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
 
         // same as above but not also reject if photon does not convert OR if conversion daughters are outside acceptance
         if(fiPhotonCut->PhotonIsSelectedAODMC(particle,fAODMCTrackArray,kTRUE /*checkForConvertedGamma*/)){
+          ++dbgNPhotonConvSelected;
           Double_t rConv = 0;
           AliAODMCParticle* ePosProcess5 = NULL;
           AliAODMCParticle* eNegProcess5 = NULL;
@@ -4280,6 +4349,15 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
       }
     }
   }
+  AliInfo(Form("AODMCDBG cut=%s tracks=%lld rawGamma=%lld headerGamma=%lld primaryGamma=%lld headerPrimaryGamma=%lld selectedGamma=%lld selectedConvGamma=%lld",
+               fiEventCut ? fiEventCut->GetCutNumber().Data() : "null",
+               dbgNTracks,
+               dbgNPhotonRaw,
+               dbgNPhotonHeader,
+               dbgNPhotonPrimary,
+               dbgNPhotonHeaderPrimary,
+               dbgNPhotonSelected,
+               dbgNPhotonConvSelected));
   return;
 }
 //________________________________________________________________________

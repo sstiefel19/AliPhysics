@@ -7560,6 +7560,17 @@ void AliConvEventCuts::GetNotRejectedParticles(Int_t rejection, TList *HeaderLis
       if (fDebugLevel > 0 ) cout << i << "\t" << GeneratorName.Data() << endl;
       for(Int_t j = 0; j<HeaderList->GetEntries();j++){ // loop over headers given in AddTask
         TString GeneratorInList   = ((TObjString*)HeaderList->At(j))->GetString();
+        if (HeaderList->GetEntries() == 2) {
+          AliInfo(Form("GNRPDBG firstLoop rejection=%d periodEnum=%d eventHeader[%d]='%s' acceptedHeader[%d]='%s' eventContainsAccepted=%d acceptedContainsEvent=%d",
+                       rejection,
+                       fPeriodEnum,
+                       i,
+                       GeneratorName.Data(),
+                       j,
+                       GeneratorInList.Data(),
+                       GeneratorName.Contains(GeneratorInList),
+                       GeneratorInList.Contains(GeneratorName)));
+        }
         if (fDebugLevel > 0 )  cout << GeneratorInList.Data() << endl;
         if (fPeriodEnum==kLHC20g10 || fPeriodEnum==kLHC24a1){
           if (GeneratorName.Contains(GeneratorInList)){ ++fnHeaders; }
