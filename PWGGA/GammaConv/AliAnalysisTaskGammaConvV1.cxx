@@ -130,6 +130,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCAllGammaMCPtMCEta(NULL),
   fHistoMCAllGammaPtFine(NULL),
   fHistoMCAllGammaMCPtMCEtaFine(NULL),
+  fHistoMCAllGammaMCPtMCPhiFine(NULL),
+  fHistoMCAllGammaMCPtMCEtaMCPhiFine(NULL),
   fHistoMCAllGammaPtFineNoPhotonWeights(NULL),
   fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCAllGammaPtNotTriggered(NULL),
@@ -146,9 +148,12 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCConvGammaPtMatBudWeights(NULL),
   fHistoMCConvGammaMCPtMCEta(NULL),
   fHistoMCConvGammaMCPtMCEtaFine(NULL),
+  fHistoMCConvGammaMCPtMCPhiFine(NULL),
+  fHistoMCConvGammaMCPtMCEtaMCPhiFine(NULL),
   fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCSecondaryConvGammaPt(NULL),
   fHistoMCConvGammaSelectionAODPt(NULL),
+  fHistoMCConvGammaSelectionAODPtPhi(NULL),
   fHistoMCAllGammaDaughterStatusPt(NULL),
   fHistoMCAllGammaConvRAllPt(NULL),
   fHistoMCAllGammaConvZAllPt(NULL),
@@ -167,6 +172,10 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoMCAllGammaSingleProcess5SignPt(NULL),
   fSparseMCAllGammaProcess5PtEtaRDaughter(NULL),
   fSparseMCConvGammaPtEtaRDaughter(NULL),
+  fSparseMCAllGammaPtPhiMotherPt(NULL),
+  fSparseMCConvGammaPtPhiR(NULL),
+  fSparseMCConvGammaPtEtaPhiR(NULL),
+  fSparseMCConvGammaPtEtaPhiRDaughter(NULL),
   fHistoMCConvGammaR(NULL),
   fHistoMCConvGammaPtR(NULL),
   fHistoMCConvGammaEta(NULL),
@@ -531,6 +540,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCAllGammaMCPtMCEta(NULL),
   fHistoMCAllGammaPtFine(NULL),
   fHistoMCAllGammaMCPtMCEtaFine(NULL),
+  fHistoMCAllGammaMCPtMCPhiFine(NULL),
+  fHistoMCAllGammaMCPtMCEtaMCPhiFine(NULL),
   fHistoMCAllGammaPtFineNoPhotonWeights(NULL),
   fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCAllGammaPtNotTriggered(NULL),
@@ -547,9 +558,12 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCConvGammaPtMatBudWeights(NULL),
   fHistoMCConvGammaMCPtMCEta(NULL),
   fHistoMCConvGammaMCPtMCEtaFine(NULL),
+  fHistoMCConvGammaMCPtMCPhiFine(NULL),
+  fHistoMCConvGammaMCPtMCEtaMCPhiFine(NULL),
   fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights(NULL),
   fHistoMCSecondaryConvGammaPt(NULL),
   fHistoMCConvGammaSelectionAODPt(NULL),
+  fHistoMCConvGammaSelectionAODPtPhi(NULL),
   fHistoMCAllGammaDaughterStatusPt(NULL),
   fHistoMCAllGammaConvRAllPt(NULL),
   fHistoMCAllGammaConvZAllPt(NULL),
@@ -568,6 +582,10 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoMCAllGammaSingleProcess5SignPt(NULL),
   fSparseMCAllGammaProcess5PtEtaRDaughter(NULL),
   fSparseMCConvGammaPtEtaRDaughter(NULL),
+  fSparseMCAllGammaPtPhiMotherPt(NULL),
+  fSparseMCConvGammaPtPhiR(NULL),
+  fSparseMCConvGammaPtEtaPhiR(NULL),
+  fSparseMCConvGammaPtEtaPhiRDaughter(NULL),
   fHistoMCConvGammaR(NULL),
   fHistoMCConvGammaPtR(NULL),
   fHistoMCConvGammaEta(NULL),
@@ -1924,6 +1942,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCAllGammaMCPtMCEta          = new TH2F*[fnCuts];
     fHistoMCAllGammaPtFine             = new TH1F*[fnCuts];
     fHistoMCAllGammaMCPtMCEtaFine      = new TH2F*[fnCuts];
+    fHistoMCAllGammaMCPtMCPhiFine      = new TH2F*[fnCuts];
+    fHistoMCAllGammaMCPtMCEtaMCPhiFine = new TH3F*[fnCuts];
     fHistoMCAllGammaPtFineNoPhotonWeights = new TH1F*[fnCuts];
     fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights = new TH2F*[fnCuts];
     fHistoMCAllGammaPtNotTriggered     = new TH1F*[fnCuts];
@@ -1940,9 +1960,12 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCConvGammaPtMatBudWeights   = new TH1F*[fnCuts];
     fHistoMCConvGammaMCPtMCEta         = new TH2F*[fnCuts];
     fHistoMCConvGammaMCPtMCEtaFine     = new TH2F*[fnCuts];
+    fHistoMCConvGammaMCPtMCPhiFine     = new TH2F*[fnCuts];
+    fHistoMCConvGammaMCPtMCEtaMCPhiFine = new TH3F*[fnCuts];
     fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights = new TH2F*[fnCuts];
     fHistoMCSecondaryConvGammaPt       = new TH2F*[fnCuts];
     fHistoMCConvGammaSelectionAODPt    = new TH2F*[fnCuts];
+    fHistoMCConvGammaSelectionAODPtPhi = new TH3F*[fnCuts];
     fHistoMCAllGammaDaughterStatusPt   = new TH2F*[fnCuts];
     fHistoMCAllGammaConvRAllPt         = new TH2F*[fnCuts];
     fHistoMCAllGammaConvZAllPt         = new TH2F*[fnCuts];
@@ -1961,6 +1984,10 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fHistoMCAllGammaSingleProcess5SignPt = new TH2F*[fnCuts];
     fSparseMCAllGammaProcess5PtEtaRDaughter = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtEtaRDaughter = new THnSparseF*[fnCuts];
+    fSparseMCAllGammaPtPhiMotherPt = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtPhiR = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaPhiR = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaPhiRDaughter = new THnSparseF*[fnCuts];
     fHistoTrueConvGammaPt              = new TH1F*[fnCuts];
     fHistoDoubleCountTrueConvGammaRPt  = new TH2F*[fnCuts];
     fHistoMultipleCountTrueConvGamma   = new TH1F*[fnCuts];
@@ -2118,6 +2145,16 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEta[iCut]);
         fHistoMCAllGammaMCPtMCEtaFine[iCut] = new TH2F("MC_AllGamma_MCPt_MCEta_Fine", "MC_AllGamma_MCPt_MCEta_Fine", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
         fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEtaFine[iCut]);
+        fHistoMCAllGammaMCPtMCPhiFine[iCut] = new TH2F("MC_AllGamma_MCPt_MCPhi_Fine",
+                                                       "MC_AllGamma_MCPt_MCPhi_Fine",
+                                                       nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 36, 0, TMath::TwoPi());
+        fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCPhiFine[iCut]);
+        fHistoMCAllGammaMCPtMCEtaMCPhiFine[iCut] = new TH3F("MC_AllGamma_MCPt_MCEta_MCPhi_Fine",
+                                                            "MC_AllGamma_MCPt_MCEta_MCPhi_Fine",
+                                                            nBinsPtFineLowPt, arrPtBinningFineLowPt.front(), arrPtBinningFineLowPt.back(),
+                                                            32, -0.8, 0.8, 36, 0, TMath::TwoPi());
+        fHistoMCAllGammaMCPtMCEtaMCPhiFine[iCut]->GetXaxis()->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEtaMCPhiFine[iCut]);
         fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[iCut] = new TH2F("MC_AllGamma_MCPt_MCEta_Fine_NoPhotonWeights", "MC_AllGamma_MCPt_MCEta_Fine_NoPhotonWeights", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
         fMCList[iCut]->Add(fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[iCut]);
       }
@@ -2156,6 +2193,16 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEta[iCut]);
         fHistoMCConvGammaMCPtMCEtaFine[iCut] = new TH2F("MC_ConvGamma_MCPt_MCEta_Fine", "MC_ConvGamma_MCPt_MCEta_Fine", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
         fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEtaFine[iCut]);
+        fHistoMCConvGammaMCPtMCPhiFine[iCut] = new TH2F("MC_ConvGamma_MCPt_MCPhi_Fine",
+                                                        "MC_ConvGamma_MCPt_MCPhi_Fine",
+                                                        nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 36, 0, TMath::TwoPi());
+        fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCPhiFine[iCut]);
+        fHistoMCConvGammaMCPtMCEtaMCPhiFine[iCut] = new TH3F("MC_ConvGamma_MCPt_MCEta_MCPhi_Fine",
+                                                             "MC_ConvGamma_MCPt_MCEta_MCPhi_Fine",
+                                                             nBinsPtFineLowPt, arrPtBinningFineLowPt.front(), arrPtBinningFineLowPt.back(),
+                                                             32, -0.8, 0.8, 36, 0, TMath::TwoPi());
+        fHistoMCConvGammaMCPtMCEtaMCPhiFine[iCut]->GetXaxis()->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEtaMCPhiFine[iCut]);
         fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[iCut] = new TH2F("MC_ConvGamma_MCPt_MCEta_Fine_NoPhotonWeights", "MC_ConvGamma_MCPt_MCEta_Fine_NoPhotonWeights", nBinsPtFineLowPt, arrPtBinningFineLowPt.data(), 1000, -2, 2);
         fMCList[iCut]->Add(fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[iCut]);
       }
@@ -2179,6 +2226,21 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoMCConvGammaSelectionAODPt[iCut]->GetYaxis()->SetBinLabel(8, "line cut max R");
         fHistoMCConvGammaSelectionAODPt[iCut]->GetYaxis()->SetBinLabel(9, "selected conv");
         fMCList[iCut]->Add(fHistoMCConvGammaSelectionAODPt[iCut]);
+        fHistoMCConvGammaSelectionAODPtPhi[iCut] = new TH3F("MC_ConvGammaSelectionAODPtPhi",
+                                                            "MC_ConvGammaSelectionAODPtPhi",
+                                                            nBinsPtFineLowPt, arrPtBinningFineLowPt.front(), arrPtBinningFineLowPt.back(),
+                                                            36, 0, TMath::TwoPi(), 9, -0.5, 8.5);
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetXaxis()->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(1, "all selected gamma");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(2, "NDaughters < 2");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(3, "no process-5 e+e-");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(4, "daughter eta");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(5, "R > max");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(6, "|Z| > max");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(7, "line cut min R");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(8, "line cut max R");
+        fHistoMCConvGammaSelectionAODPtPhi[iCut]->GetZaxis()->SetBinLabel(9, "selected conv");
+        fMCList[iCut]->Add(fHistoMCConvGammaSelectionAODPtPhi[iCut]);
 
         fHistoMCAllGammaDaughterStatusPt[iCut] = new TH2F("MC_AllGamma_DaughterStatus_Pt",
                                                           "MC_AllGamma_DaughterStatus_Pt",
@@ -2286,6 +2348,62 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(3)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
         fSparseMCConvGammaPtEtaRDaughter[iCut]->GetAxis(4)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
         fMCList[iCut]->Add(fSparseMCConvGammaPtEtaRDaughter[iCut]);
+
+        const Int_t nPtPhiMotherBins[3] = {nBinsPtFineLowPt, 36, 80};
+        const Double_t ptPhiMotherXMin[3] = {arrPtBinningFineLowPt.front(), 0., 0.};
+        const Double_t ptPhiMotherXMax[3] = {arrPtBinningFineLowPt.back(), TMath::TwoPi(), 2.};
+        fSparseMCAllGammaPtPhiMotherPt[iCut] =
+          new THnSparseF("MC_AllGamma_MCPt_MCPhi_MotherPt_Fine",
+                         "MC_AllGamma_MCPt_MCPhi_MotherPt_Fine",
+                         3, nPtPhiMotherBins, ptPhiMotherXMin, ptPhiMotherXMax);
+        fSparseMCAllGammaPtPhiMotherPt[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCAllGammaPtPhiMotherPt[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCAllGammaPtPhiMotherPt[iCut]->GetAxis(1)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCAllGammaPtPhiMotherPt[iCut]->GetAxis(2)->SetTitle("p_{T,mother}^{MC} (GeV/#it{c})");
+        fMCList[iCut]->Add(fSparseMCAllGammaPtPhiMotherPt[iCut]);
+
+        const Int_t nPtPhiRBins[3] = {nBinsPtFineLowPt, 36, 80};
+        const Double_t ptPhiRXMin[3] = {arrPtBinningFineLowPt.front(), 0., 0.};
+        const Double_t ptPhiRXMax[3] = {arrPtBinningFineLowPt.back(), TMath::TwoPi(), 200.};
+        fSparseMCConvGammaPtPhiR[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCPhi_R_Fine",
+                         "MC_ConvGamma_MCPt_MCPhi_R_Fine",
+                         3, nPtPhiRBins, ptPhiRXMin, ptPhiRXMax);
+        fSparseMCConvGammaPtPhiR[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtPhiR[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtPhiR[iCut]->GetAxis(1)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCConvGammaPtPhiR[iCut]->GetAxis(2)->SetTitle("R_{conv}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtPhiR[iCut]);
+
+        const Int_t nPtEtaPhiRBins[4] = {nBinsPtFineLowPt, 32, 36, 80};
+        const Double_t ptEtaPhiRXMin[4] = {arrPtBinningFineLowPt.front(), -0.8, 0., 0.};
+        const Double_t ptEtaPhiRXMax[4] = {arrPtBinningFineLowPt.back(), 0.8, TMath::TwoPi(), 200.};
+        fSparseMCConvGammaPtEtaPhiR[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_MCPhi_R_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_MCPhi_R_Fine",
+                         4, nPtEtaPhiRBins, ptEtaPhiRXMin, ptEtaPhiRXMax);
+        fSparseMCConvGammaPtEtaPhiR[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaPhiR[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiR[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiR[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiR[iCut]->GetAxis(3)->SetTitle("R_{conv}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaPhiR[iCut]);
+
+        const Int_t nPtEtaPhiRDaughterBins[6] = {nBinsPtFineLowPt, 32, 36, 80, 100, 100};
+        const Double_t ptEtaPhiRDaughterXMin[6] = {arrPtBinningFineLowPt.front(), -0.8, 0., 0., 0., 0.};
+        const Double_t ptEtaPhiRDaughterXMax[6] = {arrPtBinningFineLowPt.back(), 0.8, TMath::TwoPi(), 200., 0.2, 5.};
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_MCPhi_R_MinDaughterPt_MaxAbsDaughterEta_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_MCPhi_R_MinDaughterPt_MaxAbsDaughterEta_Fine",
+                         6, nPtEtaPhiRDaughterBins, ptEtaPhiRDaughterXMin, ptEtaPhiRDaughterXMax);
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(3)->SetTitle("R_{conv}^{MC} (cm)");
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(4)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(5)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaPhiRDaughter[iCut]);
       }
 
       if (fIsMC > 1){
@@ -2293,6 +2411,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEta[iCut]->Sumw2();
         fHistoMCAllGammaPtFine[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFine[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCPhiFine[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaMCPhiFine[iCut]->Sumw2();
         fHistoMCAllGammaPtFineNoPhotonWeights[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[iCut]->Sumw2();
         fHistoMCAllSecondaryGammaPt[iCut]->Sumw2();
@@ -2307,10 +2427,13 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         if (fDoPhotonQA > 0) fHistoMCConvGammaPtMatBudWeights[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEta[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEtaFine[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCPhiFine[iCut]->Sumw2();
+        if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEtaMCPhiFine[iCut]->Sumw2();
         if (fDoPhotonQA > 0) fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[iCut]->Sumw2();
         fHistoMCSecondaryConvGammaPt[iCut]->Sumw2();
         if (fDoPhotonQA > 0) {
           fHistoMCConvGammaSelectionAODPt[iCut]->Sumw2();
+          fHistoMCConvGammaSelectionAODPtPhi[iCut]->Sumw2();
           fHistoMCAllGammaDaughterStatusPt[iCut]->Sumw2();
           fHistoMCAllGammaConvRAllPt[iCut]->Sumw2();
           fHistoMCAllGammaConvZAllPt[iCut]->Sumw2();
@@ -4017,14 +4140,25 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
           if (fDoPhotonQA > 0) {
             fHistoMCAllGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
             fHistoMCAllGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+            fHistoMCAllGammaMCPtMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Phi(),totalPhotonWeight);
+            fHistoMCAllGammaMCPtMCEtaMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Eta(),particle->Phi(),totalPhotonWeight);
+            if(particle->GetMother() > -1){
+              AliAODMCParticle* motherParticle = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(particle->GetMother()));
+              if(motherParticle){
+                const Double_t allGammaPtPhiMotherValues[3] = {particle->Pt(), particle->Phi(), motherParticle->Pt()};
+                fSparseMCAllGammaPtPhiMotherPt[fiCut]->Fill(allGammaPtPhiMotherValues, totalPhotonWeight);
+              }
+            }
           }
           fHistoMCAllGammaPtFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),fWeightJetJetMC);
           if (fDoPhotonQA > 0) fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
           if (fDoPhotonQA > 0) {
             const Int_t aodMCConvGammaSelectionCategory = fiPhotonCut->GetAODMCConversionPhotonSelectionCategory(particle, fAODMCTrackArray);
             fHistoMCConvGammaSelectionAODPt[fiCut]->Fill(particle->Pt(), 0., totalPhotonWeight);
+            fHistoMCConvGammaSelectionAODPtPhi[fiCut]->Fill(particle->Pt(), particle->Phi(), 0., totalPhotonWeight);
             if (aodMCConvGammaSelectionCategory > 0) {
               fHistoMCConvGammaSelectionAODPt[fiCut]->Fill(particle->Pt(), aodMCConvGammaSelectionCategory, totalPhotonWeight);
+              fHistoMCConvGammaSelectionAODPtPhi[fiCut]->Fill(particle->Pt(), particle->Phi(), aodMCConvGammaSelectionCategory, totalPhotonWeight);
             }
 
             AliAODMCParticle* ePosProcess5 = NULL;
@@ -4172,19 +4306,35 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
           if (fDoPhotonQA > 0) {
             fHistoMCConvGammaMCPtMCEta[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
             fHistoMCConvGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
+            fHistoMCConvGammaMCPtMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Phi(),totalPhotonWeight);
+            fHistoMCConvGammaMCPtMCEtaMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Eta(),particle->Phi(),totalPhotonWeight);
             fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
           }
           if (fDoPhotonQA > 0 && ePosProcess5 && eNegProcess5) {
             const Double_t rEPos = TMath::Sqrt(ePosProcess5->Xv() * ePosProcess5->Xv() + ePosProcess5->Yv() * ePosProcess5->Yv());
             const Double_t rENeg = TMath::Sqrt(eNegProcess5->Xv() * eNegProcess5->Xv() + eNegProcess5->Yv() * eNegProcess5->Yv());
+            const Double_t rConvProcess5 = 0.5 * (rEPos + rENeg);
             const Double_t process5SparseValues[5] = {
               particle->Pt(),
               particle->Eta(),
-              0.5 * (rEPos + rENeg),
+              rConvProcess5,
               TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt()),
               TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta()))
             };
             fSparseMCConvGammaPtEtaRDaughter[fiCut]->Fill(process5SparseValues, totalPhotonWeight);
+            const Double_t convPtPhiRValues[3] = {particle->Pt(), particle->Phi(), rConvProcess5};
+            fSparseMCConvGammaPtPhiR[fiCut]->Fill(convPtPhiRValues, totalPhotonWeight);
+            const Double_t convPtEtaPhiRValues[4] = {particle->Pt(), particle->Eta(), particle->Phi(), rConvProcess5};
+            fSparseMCConvGammaPtEtaPhiR[fiCut]->Fill(convPtEtaPhiRValues, totalPhotonWeight);
+            const Double_t convPtEtaPhiRDaughterValues[6] = {
+              particle->Pt(),
+              particle->Eta(),
+              particle->Phi(),
+              rConvProcess5,
+              TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt()),
+              TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta()))
+            };
+            fSparseMCConvGammaPtEtaPhiRDaughter[fiCut]->Fill(convPtEtaPhiRDaughterValues, totalPhotonWeight);
           }
           if ( fDoPhotonQA > 0 && fIsMC < 2){
             fHistoMCConvGammaR[fiCut]->Fill(rConv,totalPhotonWeight);

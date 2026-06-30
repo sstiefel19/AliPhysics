@@ -191,6 +191,8 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH2F**                            fHistoMCAllGammaMCPtMCEta;                       //!
     TH1F**                            fHistoMCAllGammaPtFine;                          //!
     TH2F**                            fHistoMCAllGammaMCPtMCEtaFine;                   //!
+    TH2F**                            fHistoMCAllGammaMCPtMCPhiFine;                   //!
+    TH3F**                            fHistoMCAllGammaMCPtMCEtaMCPhiFine;              //!
     TH1F**                            fHistoMCAllGammaPtFineNoPhotonWeights;          //!
     TH2F**                            fHistoMCAllGammaMCPtMCEtaFineNoPhotonWeights;   //!
     TH1F**                            fHistoMCAllGammaPtNotTriggered;                  //!
@@ -207,9 +209,12 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH1F**                            fHistoMCConvGammaPtMatBudWeights;                //!
     TH2F**                            fHistoMCConvGammaMCPtMCEta;                      //!
     TH2F**                            fHistoMCConvGammaMCPtMCEtaFine;                  //!
+    TH2F**                            fHistoMCConvGammaMCPtMCPhiFine;                  //!
+    TH3F**                            fHistoMCConvGammaMCPtMCEtaMCPhiFine;             //!
     TH2F**                            fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights;   //!
     TH2F**                            fHistoMCSecondaryConvGammaPt;                    //!
     TH2F**                            fHistoMCConvGammaSelectionAODPt;                 //!
+    TH3F**                            fHistoMCConvGammaSelectionAODPtPhi;              //!
     TH2F**                            fHistoMCAllGammaDaughterStatusPt;                //!
     TH2F**                            fHistoMCAllGammaConvRAllPt;                      //!
     TH2F**                            fHistoMCAllGammaConvZAllPt;                      //!
@@ -228,6 +233,10 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH2F**                            fHistoMCAllGammaSingleProcess5SignPt;            //!
     THnSparseF**                      fSparseMCAllGammaProcess5PtEtaRDaughter;         //!
     THnSparseF**                      fSparseMCConvGammaPtEtaRDaughter;                //!
+    THnSparseF**                      fSparseMCAllGammaPtPhiMotherPt;                  //!
+    THnSparseF**                      fSparseMCConvGammaPtPhiR;                        //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaPhiR;                     //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaPhiRDaughter;             //!
     TH1F**                            fHistoMCConvGammaR;                              //!
     TH2F**                            fHistoMCConvGammaPtR;                            //!
     TH1F**                            fHistoMCConvGammaEta;                            //!
