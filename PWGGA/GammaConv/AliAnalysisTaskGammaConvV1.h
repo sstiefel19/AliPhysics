@@ -234,6 +234,12 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     THnSparseF**                      fSparseMCAllGammaProcess5PtEtaRDaughter;         //!
     THnSparseF**                      fSparseMCConvGammaPtEtaRDaughter;                //!
     THnSparseF**                      fSparseMCAllGammaPtPhiMotherPt;                  //!
+    THnSparseF**                      fSparseMCAllGammaPtEtaEventZ;                    //!
+    THnSparseF**                      fSparseMCAllGammaPtEtaPhiEventZ;                 //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaEventZ;                   //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaPhiEventZ;                //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaEventZR;                  //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaPhiEventZR;               //!
     THnSparseF**                      fSparseMCConvGammaPtPhiR;                        //!
     THnSparseF**                      fSparseMCConvGammaPtEtaPhiR;                     //!
     THnSparseF**                      fSparseMCConvGammaPtEtaPhiRDaughter;             //!
@@ -570,7 +576,7 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
 
     AliAnalysisTaskGammaConvV1(const AliAnalysisTaskGammaConvV1&); // Prevent copy-construction
     AliAnalysisTaskGammaConvV1 &operator=(const AliAnalysisTaskGammaConvV1&); // Prevent assignment
-    ClassDef(AliAnalysisTaskGammaConvV1, 80);
+    ClassDef(AliAnalysisTaskGammaConvV1, 81);
 };
 
 #endif

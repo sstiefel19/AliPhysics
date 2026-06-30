@@ -173,6 +173,12 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fSparseMCAllGammaProcess5PtEtaRDaughter(NULL),
   fSparseMCConvGammaPtEtaRDaughter(NULL),
   fSparseMCAllGammaPtPhiMotherPt(NULL),
+  fSparseMCAllGammaPtEtaEventZ(NULL),
+  fSparseMCAllGammaPtEtaPhiEventZ(NULL),
+  fSparseMCConvGammaPtEtaEventZ(NULL),
+  fSparseMCConvGammaPtEtaPhiEventZ(NULL),
+  fSparseMCConvGammaPtEtaEventZR(NULL),
+  fSparseMCConvGammaPtEtaPhiEventZR(NULL),
   fSparseMCConvGammaPtPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiRDaughter(NULL),
@@ -583,6 +589,12 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fSparseMCAllGammaProcess5PtEtaRDaughter(NULL),
   fSparseMCConvGammaPtEtaRDaughter(NULL),
   fSparseMCAllGammaPtPhiMotherPt(NULL),
+  fSparseMCAllGammaPtEtaEventZ(NULL),
+  fSparseMCAllGammaPtEtaPhiEventZ(NULL),
+  fSparseMCConvGammaPtEtaEventZ(NULL),
+  fSparseMCConvGammaPtEtaPhiEventZ(NULL),
+  fSparseMCConvGammaPtEtaEventZR(NULL),
+  fSparseMCConvGammaPtEtaPhiEventZR(NULL),
   fSparseMCConvGammaPtPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiRDaughter(NULL),
@@ -1985,6 +1997,12 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fSparseMCAllGammaProcess5PtEtaRDaughter = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtEtaRDaughter = new THnSparseF*[fnCuts];
     fSparseMCAllGammaPtPhiMotherPt = new THnSparseF*[fnCuts];
+    fSparseMCAllGammaPtEtaEventZ = new THnSparseF*[fnCuts];
+    fSparseMCAllGammaPtEtaPhiEventZ = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaEventZ = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaPhiEventZ = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaEventZR = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaPhiEventZR = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtPhiR = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtEtaPhiR = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtEtaPhiRDaughter = new THnSparseF*[fnCuts];
@@ -2361,6 +2379,83 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fSparseMCAllGammaPtPhiMotherPt[iCut]->GetAxis(1)->SetTitle("#varphi_{#gamma}^{MC}");
         fSparseMCAllGammaPtPhiMotherPt[iCut]->GetAxis(2)->SetTitle("p_{T,mother}^{MC} (GeV/#it{c})");
         fMCList[iCut]->Add(fSparseMCAllGammaPtPhiMotherPt[iCut]);
+
+        const Int_t nPtEtaEventZBins[3] = {nBinsPtFineLowPt, 32, 60};
+        const Double_t ptEtaEventZXMin[3] = {arrPtBinningFineLowPt.front(), -0.8, -30.};
+        const Double_t ptEtaEventZXMax[3] = {arrPtBinningFineLowPt.back(), 0.8, 30.};
+        fSparseMCAllGammaPtEtaEventZ[iCut] =
+          new THnSparseF("MC_AllGamma_MCPt_MCEta_EventZ_Fine",
+                         "MC_AllGamma_MCPt_MCEta_EventZ_Fine",
+                         3, nPtEtaEventZBins, ptEtaEventZXMin, ptEtaEventZXMax);
+        fSparseMCAllGammaPtEtaEventZ[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCAllGammaPtEtaEventZ[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCAllGammaPtEtaEventZ[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCAllGammaPtEtaEventZ[iCut]->GetAxis(2)->SetTitle("z_{vtx}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCAllGammaPtEtaEventZ[iCut]);
+
+        const Int_t nPtEtaPhiEventZBins[4] = {nBinsPtFineLowPt, 32, 36, 60};
+        const Double_t ptEtaPhiEventZXMin[4] = {arrPtBinningFineLowPt.front(), -0.8, 0., -30.};
+        const Double_t ptEtaPhiEventZXMax[4] = {arrPtBinningFineLowPt.back(), 0.8, TMath::TwoPi(), 30.};
+        fSparseMCAllGammaPtEtaPhiEventZ[iCut] =
+          new THnSparseF("MC_AllGamma_MCPt_MCEta_MCPhi_EventZ_Fine",
+                         "MC_AllGamma_MCPt_MCEta_MCPhi_EventZ_Fine",
+                         4, nPtEtaPhiEventZBins, ptEtaPhiEventZXMin, ptEtaPhiEventZXMax);
+        fSparseMCAllGammaPtEtaPhiEventZ[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCAllGammaPtEtaPhiEventZ[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCAllGammaPtEtaPhiEventZ[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCAllGammaPtEtaPhiEventZ[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCAllGammaPtEtaPhiEventZ[iCut]->GetAxis(3)->SetTitle("z_{vtx}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCAllGammaPtEtaPhiEventZ[iCut]);
+
+        fSparseMCConvGammaPtEtaEventZ[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_EventZ_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_EventZ_Fine",
+                         3, nPtEtaEventZBins, ptEtaEventZXMin, ptEtaEventZXMax);
+        fSparseMCConvGammaPtEtaEventZ[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaEventZ[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaEventZ[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaEventZ[iCut]->GetAxis(2)->SetTitle("z_{vtx}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaEventZ[iCut]);
+
+        fSparseMCConvGammaPtEtaPhiEventZ[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_MCPhi_EventZ_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_MCPhi_EventZ_Fine",
+                         4, nPtEtaPhiEventZBins, ptEtaPhiEventZXMin, ptEtaPhiEventZXMax);
+        fSparseMCConvGammaPtEtaPhiEventZ[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaPhiEventZ[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiEventZ[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiEventZ[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiEventZ[iCut]->GetAxis(3)->SetTitle("z_{vtx}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaPhiEventZ[iCut]);
+
+        const Int_t nPtEtaEventZRBins[4] = {nBinsPtFineLowPt, 32, 60, 80};
+        const Double_t ptEtaEventZRXMin[4] = {arrPtBinningFineLowPt.front(), -0.8, -30., 0.};
+        const Double_t ptEtaEventZRXMax[4] = {arrPtBinningFineLowPt.back(), 0.8, 30., 200.};
+        fSparseMCConvGammaPtEtaEventZR[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_EventZ_R_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_EventZ_R_Fine",
+                         4, nPtEtaEventZRBins, ptEtaEventZRXMin, ptEtaEventZRXMax);
+        fSparseMCConvGammaPtEtaEventZR[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaEventZR[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaEventZR[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaEventZR[iCut]->GetAxis(2)->SetTitle("z_{vtx}^{MC} (cm)");
+        fSparseMCConvGammaPtEtaEventZR[iCut]->GetAxis(3)->SetTitle("R_{conv}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaEventZR[iCut]);
+
+        const Int_t nPtEtaPhiEventZRBins[5] = {nBinsPtFineLowPt, 32, 36, 60, 80};
+        const Double_t ptEtaPhiEventZRXMin[5] = {arrPtBinningFineLowPt.front(), -0.8, 0., -30., 0.};
+        const Double_t ptEtaPhiEventZRXMax[5] = {arrPtBinningFineLowPt.back(), 0.8, TMath::TwoPi(), 30., 200.};
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_MCPhi_EventZ_R_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_MCPhi_EventZ_R_Fine",
+                         5, nPtEtaPhiEventZRBins, ptEtaPhiEventZRXMin, ptEtaPhiEventZRXMax);
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut]->GetAxis(3)->SetTitle("z_{vtx}^{MC} (cm)");
+        fSparseMCConvGammaPtEtaPhiEventZR[iCut]->GetAxis(4)->SetTitle("R_{conv}^{MC} (cm)");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaPhiEventZR[iCut]);
 
         const Int_t nPtPhiRBins[3] = {nBinsPtFineLowPt, 36, 80};
         const Double_t ptPhiRXMin[3] = {arrPtBinningFineLowPt.front(), 0., 0.};
@@ -4142,6 +4237,10 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
             fHistoMCAllGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
             fHistoMCAllGammaMCPtMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Phi(),totalPhotonWeight);
             fHistoMCAllGammaMCPtMCEtaMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Eta(),particle->Phi(),totalPhotonWeight);
+            const Double_t allGammaPtEtaEventZValues[3] = {particle->Pt(), particle->Eta(), mcProdVtxZ};
+            fSparseMCAllGammaPtEtaEventZ[fiCut]->Fill(allGammaPtEtaEventZValues, totalPhotonWeight);
+            const Double_t allGammaPtEtaPhiEventZValues[4] = {particle->Pt(), particle->Eta(), particle->Phi(), mcProdVtxZ};
+            fSparseMCAllGammaPtEtaPhiEventZ[fiCut]->Fill(allGammaPtEtaPhiEventZValues, totalPhotonWeight);
             if(particle->GetMother() > -1){
               AliAODMCParticle* motherParticle = static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(particle->GetMother()));
               if(motherParticle){
@@ -4308,6 +4407,10 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
             fHistoMCConvGammaMCPtMCEtaFine[fiCut]->Fill(particle->Pt(),particle->Eta(),totalPhotonWeight);
             fHistoMCConvGammaMCPtMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Phi(),totalPhotonWeight);
             fHistoMCConvGammaMCPtMCEtaMCPhiFine[fiCut]->Fill(particle->Pt(),particle->Eta(),particle->Phi(),totalPhotonWeight);
+            const Double_t convGammaPtEtaEventZValues[3] = {particle->Pt(), particle->Eta(), mcProdVtxZ};
+            fSparseMCConvGammaPtEtaEventZ[fiCut]->Fill(convGammaPtEtaEventZValues, totalPhotonWeight);
+            const Double_t convGammaPtEtaPhiEventZValues[4] = {particle->Pt(), particle->Eta(), particle->Phi(), mcProdVtxZ};
+            fSparseMCConvGammaPtEtaPhiEventZ[fiCut]->Fill(convGammaPtEtaPhiEventZValues, totalPhotonWeight);
             fHistoMCConvGammaMCPtMCEtaFineNoPhotonWeights[fiCut]->Fill(particle->Pt(),particle->Eta(),fWeightJetJetMC);
           }
           if (fDoPhotonQA > 0 && ePosProcess5 && eNegProcess5) {
@@ -4326,6 +4429,10 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
             fSparseMCConvGammaPtPhiR[fiCut]->Fill(convPtPhiRValues, totalPhotonWeight);
             const Double_t convPtEtaPhiRValues[4] = {particle->Pt(), particle->Eta(), particle->Phi(), rConvProcess5};
             fSparseMCConvGammaPtEtaPhiR[fiCut]->Fill(convPtEtaPhiRValues, totalPhotonWeight);
+            const Double_t convPtEtaEventZRValues[4] = {particle->Pt(), particle->Eta(), mcProdVtxZ, rConvProcess5};
+            fSparseMCConvGammaPtEtaEventZR[fiCut]->Fill(convPtEtaEventZRValues, totalPhotonWeight);
+            const Double_t convPtEtaPhiEventZRValues[5] = {particle->Pt(), particle->Eta(), particle->Phi(), mcProdVtxZ, rConvProcess5};
+            fSparseMCConvGammaPtEtaPhiEventZR[fiCut]->Fill(convPtEtaPhiEventZRValues, totalPhotonWeight);
             const Double_t convPtEtaPhiRDaughterValues[6] = {
               particle->Pt(),
               particle->Eta(),
