@@ -33,6 +33,7 @@
 #include "THnSparse.h"
 #include "TCanvas.h"
 #include "TNtuple.h"
+#include "TVector3.h"
 #include "AliAnalysisTask.h"
 #include "AliAnalysisManager.h"
 #include "AliESDEvent.h"
@@ -182,6 +183,9 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fSparseMCConvGammaPtPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiRDaughter(NULL),
+  fSparseMCConvGammaPtEtaPhiRZDaughter(NULL),
+  fSparseTruePrimaryConvGammaPtEtaRDaughter(NULL),
+  fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter(NULL),
   fHistoMCConvGammaR(NULL),
   fHistoMCConvGammaPtR(NULL),
   fHistoMCConvGammaEta(NULL),
@@ -598,6 +602,9 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fSparseMCConvGammaPtPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiR(NULL),
   fSparseMCConvGammaPtEtaPhiRDaughter(NULL),
+  fSparseMCConvGammaPtEtaPhiRZDaughter(NULL),
+  fSparseTruePrimaryConvGammaPtEtaRDaughter(NULL),
+  fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter(NULL),
   fHistoMCConvGammaR(NULL),
   fHistoMCConvGammaPtR(NULL),
   fHistoMCConvGammaEta(NULL),
@@ -2006,6 +2013,9 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
     fSparseMCConvGammaPtPhiR = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtEtaPhiR = new THnSparseF*[fnCuts];
     fSparseMCConvGammaPtEtaPhiRDaughter = new THnSparseF*[fnCuts];
+    fSparseMCConvGammaPtEtaPhiRZDaughter = new THnSparseF*[fnCuts];
+    fSparseTruePrimaryConvGammaPtEtaRDaughter = new THnSparseF*[fnCuts];
+    fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter = new THnSparseF*[fnCuts];
     fHistoTrueConvGammaPt              = new TH1F*[fnCuts];
     fHistoDoubleCountTrueConvGammaRPt  = new TH2F*[fnCuts];
     fHistoMultipleCountTrueConvGamma   = new TH1F*[fnCuts];
@@ -2499,6 +2509,26 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(4)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
         fSparseMCConvGammaPtEtaPhiRDaughter[iCut]->GetAxis(5)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
         fMCList[iCut]->Add(fSparseMCConvGammaPtEtaPhiRDaughter[iCut]);
+
+        const Int_t nPtEtaPhiRZDaughterBins[10] = {nBinsPtFineLowPt, 32, 36, 160, 200, 100, 120, 100, 100, 100};
+        const Double_t ptEtaPhiRZDaughterXMin[10] = {arrPtBinningFineLowPt.front(), -0.8, 0., 0., -500., 0., 0., 0., 0., 0.};
+        const Double_t ptEtaPhiRZDaughterXMax[10] = {arrPtBinningFineLowPt.back(), 0.8, TMath::TwoPi(), 200., 500., 0.2, 6., 1., 1., 0.5};
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut] =
+          new THnSparseF("MC_ConvGamma_MCPt_MCEta_MCPhi_R_Z_MinDaughterPt_MaxAbsDaughterEta_PtAsym_MinDaughterPtFrac_OpeningAngle_Fine",
+                         "MC_ConvGamma_MCPt_MCEta_MCPhi_R_Z_MinDaughterPt_MaxAbsDaughterEta_PtAsym_MinDaughterPtFrac_OpeningAngle_Fine",
+                         10, nPtEtaPhiRZDaughterBins, ptEtaPhiRZDaughterXMin, ptEtaPhiRZDaughterXMax);
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(3)->SetTitle("R_{conv}^{MC} (cm)");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(4)->SetTitle("Z_{conv}^{MC} (cm)");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(5)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(6)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(7)->SetTitle("|p_{T,e+}-p_{T,e-}|/(p_{T,e+}+p_{T,e-})");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(8)->SetTitle("min p_{T,e^{#pm}}^{MC}/p_{T,#gamma}^{MC}");
+        fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(9)->SetTitle("#theta_{ee}^{MC}");
+        fMCList[iCut]->Add(fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]);
       }
 
       if (fIsMC > 1){
@@ -2547,6 +2577,7 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
           fHistoMCAllGammaSingleProcess5SignPt[iCut]->Sumw2();
           fSparseMCAllGammaProcess5PtEtaRDaughter[iCut]->Sumw2();
           fSparseMCConvGammaPtEtaRDaughter[iCut]->Sumw2();
+          fSparseMCConvGammaPtEtaPhiRZDaughter[iCut]->Sumw2();
         }
       }
 
@@ -2878,9 +2909,44 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoTrueConvGammaRecoStageMCPt[iCut]->GetYaxis()->SetBinLabel(5, "AODMC selected conv");
         fHistoTrueConvGammaRecoStageMCPt[iCut]->GetYaxis()->SetBinLabel(6, "fills primary numerator");
         fTrueList[iCut]->Add(fHistoTrueConvGammaRecoStageMCPt[iCut]);
+        const Int_t nTrueConvTopoSparseBins[5] = {nBinsPt, 1000, 800, 200, 300};
+        const Double_t trueConvTopoSparseXMin[5] = {arrPtBinning[0], -2., 0., 0., 0.};
+        const Double_t trueConvTopoSparseXMax[5] = {arrPtBinning[nBinsPt], 2., 400., 5., 6.};
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut] =
+          new THnSparseF("ESD_TruePrimaryConvGamma_MCPt_MCEta_R_MinDaughterPt_MaxAbsDaughterEta",
+                         "ESD_TruePrimaryConvGamma_MCPt_MCEta_R_MinDaughterPt_MaxAbsDaughterEta",
+                         5, nTrueConvTopoSparseBins, trueConvTopoSparseXMin, trueConvTopoSparseXMax);
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->GetAxis(0)->Set(nBinsPt, arrPtBinning);
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->GetAxis(2)->SetTitle("R_{conv}^{MC} (cm)");
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->GetAxis(3)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->GetAxis(4)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
+        fTrueList[iCut]->Add(fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]);
+        const Int_t nTrueConvTopoExtBins[10] = {nBinsPtFineLowPt, 32, 36, 160, 200, 100, 120, 100, 100, 100};
+        const Double_t trueConvTopoExtXMin[10] = {arrPtBinningFineLowPt.front(), -0.8, 0., 0., -500., 0., 0., 0., 0., 0.};
+        const Double_t trueConvTopoExtXMax[10] = {arrPtBinningFineLowPt.back(), 0.8, TMath::TwoPi(), 200., 500., 0.2, 6., 1., 1., 0.5};
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut] =
+          new THnSparseF("ESD_TruePrimaryConvGamma_MCPt_MCEta_MCPhi_R_Z_MinDaughterPt_MaxAbsDaughterEta_PtAsym_MinDaughterPtFrac_OpeningAngle_Fine",
+                         "ESD_TruePrimaryConvGamma_MCPt_MCEta_MCPhi_R_Z_MinDaughterPt_MaxAbsDaughterEta_PtAsym_MinDaughterPtFrac_OpeningAngle_Fine",
+                         10, nTrueConvTopoExtBins, trueConvTopoExtXMin, trueConvTopoExtXMax);
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(0)->Set(nBinsPtFineLowPt, arrPtBinningFineLowPt.data());
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(0)->SetTitle("p_{T,#gamma}^{MC} (GeV/#it{c})");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(1)->SetTitle("#eta_{#gamma}^{MC}");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(2)->SetTitle("#varphi_{#gamma}^{MC}");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(3)->SetTitle("R_{conv}^{MC} (cm)");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(4)->SetTitle("Z_{conv}^{MC} (cm)");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(5)->SetTitle("min p_{T,e^{#pm}}^{MC} (GeV/#it{c})");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(6)->SetTitle("max |#eta_{e^{#pm}}^{MC}|");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(7)->SetTitle("|p_{T,e+}-p_{T,e-}|/(p_{T,e+}+p_{T,e-})");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(8)->SetTitle("min p_{T,e^{#pm}}^{MC}/p_{T,#gamma}^{MC}");
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->GetAxis(9)->SetTitle("#theta_{ee}^{MC}");
+        fTrueList[iCut]->Add(fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]);
         if ((fIsMC > 1) || (fDoMaterialBudgetWeightingOfGammasForTrueMesons && fIsMC > 0) ) {
           fHistoTrueConvGammaPtMC[iCut]->Sumw2();
           fHistoTrueConvGammaRecoStageMCPt[iCut]->Sumw2();
+          fSparseTruePrimaryConvGammaPtEtaRDaughter[iCut]->Sumw2();
+          fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[iCut]->Sumw2();
         }
 
       }
@@ -3968,7 +4034,39 @@ void AliAnalysisTaskGammaConvV1::ProcessTruePhotonCandidatesAOD(AliAODConversion
       // Count just primary MC Gammas as true --> For Ratio esdtruegamma / mcconvgamma
       iPhotonMCInfo = 6;
       fHistoTruePrimaryConvGammaPt[fiCut]->Fill(TruePhotonCandidate->Pt(),totalTruePhotonWeight);
-      if (fDoPhotonQA > 0) fHistoTruePrimaryConvGammaMCPtMCEta[fiCut]->Fill(Photon->Pt(),Photon->Eta(),totalTruePhotonWeight);
+      if (fDoPhotonQA > 0) {
+        fHistoTruePrimaryConvGammaMCPtMCEta[fiCut]->Fill(Photon->Pt(),Photon->Eta(),totalTruePhotonWeight);
+        const Double_t rEPosTrue = TMath::Sqrt(posDaughter->Xv() * posDaughter->Xv() + posDaughter->Yv() * posDaughter->Yv());
+        const Double_t rENegTrue = TMath::Sqrt(negDaughter->Xv() * negDaughter->Xv() + negDaughter->Yv() * negDaughter->Yv());
+        const Double_t minDaughterPtTrue = TMath::Min(posDaughter->Pt(), negDaughter->Pt());
+        const Double_t daughterPtSumTrue = posDaughter->Pt() + negDaughter->Pt();
+        const Double_t daughterPtAsymTrue = daughterPtSumTrue > 0. ? TMath::Abs(posDaughter->Pt() - negDaughter->Pt()) / daughterPtSumTrue : 0.;
+        const Double_t minDaughterPtFracTrue = Photon->Pt() > 0. ? minDaughterPtTrue / Photon->Pt() : 0.;
+        const TVector3 posDaughterMomTrue(posDaughter->Px(), posDaughter->Py(), posDaughter->Pz());
+        const TVector3 negDaughterMomTrue(negDaughter->Px(), negDaughter->Py(), negDaughter->Pz());
+        const Double_t openingAngleTrue = (posDaughterMomTrue.Mag() > 0. && negDaughterMomTrue.Mag() > 0.) ? posDaughterMomTrue.Angle(negDaughterMomTrue) : 0.;
+        const Double_t trueConvTopoValues[5] = {
+          Photon->Pt(),
+          Photon->Eta(),
+          0.5 * (rEPosTrue + rENegTrue),
+          minDaughterPtTrue,
+          TMath::Max(TMath::Abs(posDaughter->Eta()), TMath::Abs(negDaughter->Eta()))
+        };
+        fSparseTruePrimaryConvGammaPtEtaRDaughter[fiCut]->Fill(trueConvTopoValues, totalTruePhotonWeight);
+        const Double_t trueConvTopoExtValues[10] = {
+          Photon->Pt(),
+          Photon->Eta(),
+          Photon->Phi(),
+          0.5 * (rEPosTrue + rENegTrue),
+          0.5 * (posDaughter->Zv() + negDaughter->Zv()),
+          minDaughterPtTrue,
+          TMath::Max(TMath::Abs(posDaughter->Eta()), TMath::Abs(negDaughter->Eta())),
+          daughterPtAsymTrue,
+          minDaughterPtFracTrue,
+          openingAngleTrue
+        };
+        fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter[fiCut]->Fill(trueConvTopoExtValues, totalTruePhotonWeight);
+      }
       if (fDoPhotonQA > 0) fHistoTrueConvGammaRecoStageMCPt[fiCut]->Fill(Photon->Pt(), 5., recoStageWeight);
       fHistoTruePrimaryConvGammaESDPtMCPt[fiCut]->Fill(TruePhotonCandidate->Pt(),Photon->Pt(),totalTruePhotonWeight); // Allways Filled
       // (Not Filled for i6, Extra Signal Gamma (parambox) are secondary)
@@ -4417,11 +4515,18 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
             const Double_t rEPos = TMath::Sqrt(ePosProcess5->Xv() * ePosProcess5->Xv() + ePosProcess5->Yv() * ePosProcess5->Yv());
             const Double_t rENeg = TMath::Sqrt(eNegProcess5->Xv() * eNegProcess5->Xv() + eNegProcess5->Yv() * eNegProcess5->Yv());
             const Double_t rConvProcess5 = 0.5 * (rEPos + rENeg);
+            const Double_t minDaughterPtProcess5 = TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt());
+            const Double_t daughterPtSumProcess5 = ePosProcess5->Pt() + eNegProcess5->Pt();
+            const Double_t daughterPtAsymProcess5 = daughterPtSumProcess5 > 0. ? TMath::Abs(ePosProcess5->Pt() - eNegProcess5->Pt()) / daughterPtSumProcess5 : 0.;
+            const Double_t minDaughterPtFracProcess5 = particle->Pt() > 0. ? minDaughterPtProcess5 / particle->Pt() : 0.;
+            const TVector3 ePosProcess5Mom(ePosProcess5->Px(), ePosProcess5->Py(), ePosProcess5->Pz());
+            const TVector3 eNegProcess5Mom(eNegProcess5->Px(), eNegProcess5->Py(), eNegProcess5->Pz());
+            const Double_t openingAngleProcess5 = (ePosProcess5Mom.Mag() > 0. && eNegProcess5Mom.Mag() > 0.) ? ePosProcess5Mom.Angle(eNegProcess5Mom) : 0.;
             const Double_t process5SparseValues[5] = {
               particle->Pt(),
               particle->Eta(),
               rConvProcess5,
-              TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt()),
+              minDaughterPtProcess5,
               TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta()))
             };
             fSparseMCConvGammaPtEtaRDaughter[fiCut]->Fill(process5SparseValues, totalPhotonWeight);
@@ -4438,10 +4543,23 @@ void AliAnalysisTaskGammaConvV1::ProcessAODMCParticles(int isCurrentEventSelecte
               particle->Eta(),
               particle->Phi(),
               rConvProcess5,
-              TMath::Min(ePosProcess5->Pt(), eNegProcess5->Pt()),
+              minDaughterPtProcess5,
               TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta()))
             };
             fSparseMCConvGammaPtEtaPhiRDaughter[fiCut]->Fill(convPtEtaPhiRDaughterValues, totalPhotonWeight);
+            const Double_t convPtEtaPhiRZDaughterValues[10] = {
+              particle->Pt(),
+              particle->Eta(),
+              particle->Phi(),
+              rConvProcess5,
+              0.5 * (ePosProcess5->Zv() + eNegProcess5->Zv()),
+              minDaughterPtProcess5,
+              TMath::Max(TMath::Abs(ePosProcess5->Eta()), TMath::Abs(eNegProcess5->Eta())),
+              daughterPtAsymProcess5,
+              minDaughterPtFracProcess5,
+              openingAngleProcess5
+            };
+            fSparseMCConvGammaPtEtaPhiRZDaughter[fiCut]->Fill(convPtEtaPhiRZDaughterValues, totalPhotonWeight);
           }
           if ( fDoPhotonQA > 0 && fIsMC < 2){
             fHistoMCConvGammaR[fiCut]->Fill(rConv,totalPhotonWeight);

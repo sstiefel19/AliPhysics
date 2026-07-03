@@ -243,6 +243,9 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     THnSparseF**                      fSparseMCConvGammaPtPhiR;                        //!
     THnSparseF**                      fSparseMCConvGammaPtEtaPhiR;                     //!
     THnSparseF**                      fSparseMCConvGammaPtEtaPhiRDaughter;             //!
+    THnSparseF**                      fSparseMCConvGammaPtEtaPhiRZDaughter;            //!
+    THnSparseF**                      fSparseTruePrimaryConvGammaPtEtaRDaughter;       //!
+    THnSparseF**                      fSparseTruePrimaryConvGammaPtEtaPhiRZDaughter;   //!
     TH1F**                            fHistoMCConvGammaR;                              //!
     TH2F**                            fHistoMCConvGammaPtR;                            //!
     TH1F**                            fHistoMCConvGammaEta;                            //!

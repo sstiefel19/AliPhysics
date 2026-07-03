@@ -8509,14 +8509,14 @@ Float_t AliConvEventCuts::GetWeightForMeson(Int_t index, AliMCEvent *mcEvent, Al
       return 0.;
     }
   }
-  AliAODMCParticle &aodMCParticle = *static_cast<AliAODMCParticle *>(fAODMCTrackArray->At(index));
-  Double_t mesonPt = isAOD 
-    ? aodMCParticle.Pt() 
+  AliAODMCParticle* aodMCParticle = isAOD ? static_cast<AliAODMCParticle *>(fAODMCTrackArray->At(index)) : nullptr;
+  Double_t mesonPt = isAOD
+    ? aodMCParticle->Pt()
     : ((AliMCParticle *)mcEvent->GetTrack(index))->Pt();
 
   int const lPDG = isAOD
-    ? aodMCParticle.GetPdgCode()
-    : ((AliMCParticle *)mcEvent->GetTrack(index))->PdgCode();  
+    ? aodMCParticle->GetPdgCode()
+    : ((AliMCParticle *)mcEvent->GetTrack(index))->PdgCode();
 
   // checks done
   bool isPi0 = lPDG == 111; 
