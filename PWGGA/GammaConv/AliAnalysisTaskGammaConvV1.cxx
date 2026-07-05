@@ -53,10 +53,14 @@
 #include "AliConversionAODBGHandlerRP.h"
 #include "AliAODMCParticle.h"
 #include "AliAODMCHeader.h"
+#include "AliAODHeader.h"
 #include "AliEventplane.h"
 #include "AliAODEvent.h"
+#include "AliInputEventHandler.h"
+#include "TSystem.h"
 #include <vector>
 #include <map>
+#include <fstream>
 
 
 ClassImp(AliAnalysisTaskGammaConvV1)
@@ -3359,6 +3363,42 @@ void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
       if(fDoCentralityFlat > 0) fHistoCentralityVsPrimaryTracks[iCut]->Fill(fiEventCut->GetCentrality(fInputEvent),fV0Reader->GetNumberOfPrimaryTracks(), fWeightCentrality[iCut]*fWeightJetJetMC);
       else if(fDoPlotVsCentrality) fHistoCentralityVsPrimaryTracks[iCut]->Fill(fiEventCut->GetCentrality(fInputEvent),fV0Reader->GetNumberOfPrimaryTracks(), fWeightJetJetMC);
 
+      const char* acceptedEventDumpPath = gSystem ? gSystem->Getenv("ALIGAMMACONV_ACCEPTED_EVENT_DUMP") : NULL;
+      if (acceptedEventDumpPath && acceptedEventDumpPath[0] != '\0') {
+        static std::ofstream acceptedEventDump;
+        static TString acceptedEventDumpOpenPath;
+        if (!acceptedEventDump.is_open() || acceptedEventDumpOpenPath.CompareTo(acceptedEventDumpPath) != 0) {
+          if (acceptedEventDump.is_open()) acceptedEventDump.close();
+          acceptedEventDump.open(acceptedEventDumpPath);
+          acceptedEventDumpOpenPath = acceptedEventDumpPath;
+          acceptedEventDump << "cut\tfile\treadEntry\taodEventNumberESDFile\trun\tcentrality\tvertexZ\tprimaryTracks\tweightJetJetMC\n";
+        }
+        AliInputEventHandler* inputHandler = dynamic_cast<AliInputEventHandler*>(AliAnalysisManager::GetAnalysisManager()->GetInputEventHandler());
+        TString currentFile = "unknown";
+        Long64_t readEntry = -1;
+        if (inputHandler) {
+          readEntry = inputHandler->GetReadEntry();
+          if (inputHandler->GetTree() && inputHandler->GetTree()->GetCurrentFile()) {
+            currentFile = inputHandler->GetTree()->GetCurrentFile()->GetName();
+          }
+        }
+        Int_t aodEventNumber = -1;
+        AliAODEvent* aodEvent = dynamic_cast<AliAODEvent*>(fInputEvent);
+        if (aodEvent) {
+          AliAODHeader* aodHeader = dynamic_cast<AliAODHeader*>(aodEvent->GetHeader());
+          if (aodHeader) aodEventNumber = aodHeader->GetEventNumberESDFile();
+        }
+        acceptedEventDump << fiEventCut->GetCutNumber().Data() << "\t"
+                          << currentFile.Data() << "\t"
+                          << readEntry << "\t"
+                          << aodEventNumber << "\t"
+                          << fInputEvent->GetRunNumber() << "\t"
+                          << fiEventCut->GetCentrality(fInputEvent) << "\t"
+                          << fInputEvent->GetPrimaryVertex()->GetZ() << "\t"
+                          << fV0Reader->GetNumberOfPrimaryTracks() << "\t"
+                          << fWeightJetJetMC << "\n";
+      }
+
       if(!fDoLightOutput){
         
         fiEventCut->FillTPCOccupancyHistograms(fInputEvent);
@@ -3597,20 +3637,214 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
   Bool_t lUseElecShareCut = fiPhotonCut->UseElecSharingCut();
   Bool_t lUseTooCloseCut  = fiPhotonCut->UseToCloseV0sCut();
 
+  const char* photonGateDumpPath = gSystem ? gSystem->Getenv("ALIGAMMACONV_PHOTON_GATE_DUMP") : NULL;
+  const Bool_t doPhotonGateDump = photonGateDumpPath && photonGateDumpPath[0] != '\0';
+  const char* photonGatePtMinEnv = gSystem ? gSystem->Getenv("ALIGAMMACONV_PHOTON_GATE_PT_MIN") : NULL;
+  const char* photonGatePtMaxEnv = gSystem ? gSystem->Getenv("ALIGAMMACONV_PHOTON_GATE_PT_MAX") : NULL;
+  const Double_t photonGatePtMin = photonGatePtMinEnv && photonGatePtMinEnv[0] != '\0' ? TString(photonGatePtMinEnv).Atof() : 2.0;
+  const Double_t photonGatePtMax = photonGatePtMaxEnv && photonGatePtMaxEnv[0] != '\0' ? TString(photonGatePtMaxEnv).Atof() : 2.2;
+  static std::ofstream photonGateDump;
+  static TString photonGateDumpOpenPath;
+  if (doPhotonGateDump && (!photonGateDump.is_open() || photonGateDumpOpenPath.CompareTo(photonGateDumpPath) != 0)) {
+    if (photonGateDump.is_open()) photonGateDump.close();
+    photonGateDump.open(photonGateDumpPath);
+    photonGateDumpOpenPath = photonGateDumpPath;
+    photonGateDump << "cut\tfile\treadEntry\taodEventNumberESDFile\trun\tcandidateIndex\tstage"
+                   << "\tpassesHeaderCriterion\tisFromSelectedHeader\tphotonSelected\tphotonCutReason"
+                   << "\tkind\tposLabel\tnegLabel\tgammaLabel\tpi0Label\tgammaPt\tgammaEta\trConv"
+                   << "\tposHeaderClass\tnegHeaderClass\ttrackNegPt\ttrackPosPt\ttrackNegEta\ttrackPosEta"
+                   << "\tdebugPtMin\tdebugPtMax\n";
+  }
+
+  auto getInputLocation = [&] (TString& currentFile, Long64_t& readEntry, Int_t& aodEventNumber) {
+    currentFile = "unknown";
+    readEntry = -1;
+    aodEventNumber = -1;
+    AliInputEventHandler* inputHandler = dynamic_cast<AliInputEventHandler*>(AliAnalysisManager::GetAnalysisManager()->GetInputEventHandler());
+    if (inputHandler) {
+      readEntry = inputHandler->GetReadEntry();
+      if (inputHandler->GetTree() && inputHandler->GetTree()->GetCurrentFile()) {
+        currentFile = inputHandler->GetTree()->GetCurrentFile()->GetName();
+      }
+    }
+    AliAODEvent* aodEvent = dynamic_cast<AliAODEvent*>(fInputEvent);
+    if (aodEvent) {
+      AliAODHeader* aodHeader = dynamic_cast<AliAODHeader*>(aodEvent->GetHeader());
+      if (aodHeader) aodEventNumber = aodHeader->GetEventNumberESDFile();
+    }
+  };
+
+  auto getTruePi0ConvInfo = [&] (AliAODConversionPhoton* candidate, Int_t& kind, Int_t& posLabel, Int_t& negLabel,
+                                 Int_t& gammaLabel, Int_t& pi0Label, Double_t& gammaPt, Double_t& gammaEta,
+                                 Double_t& rConv) -> Bool_t {
+    kind = 9;
+    posLabel = candidate ? candidate->GetMCLabelPositive() : -1;
+    negLabel = candidate ? candidate->GetMCLabelNegative() : -1;
+    gammaLabel = -1;
+    pi0Label = -1;
+    gammaPt = -1.;
+    gammaEta = -99.;
+    rConv = -1.;
+    if (!candidate || !fInputEvent) return kFALSE;
+
+    if (fInputEvent->IsA() == AliAODEvent::Class()) {
+      TClonesArray* aodMCTrackArray = dynamic_cast<TClonesArray*>(fInputEvent->FindListObject(AliAODMCParticle::StdBranchName()));
+      if (!aodMCTrackArray) return kFALSE;
+      posLabel = TMath::Abs(posLabel);
+      negLabel = TMath::Abs(negLabel);
+      if (posLabel < 0 || negLabel < 0 || posLabel >= aodMCTrackArray->GetEntriesFast() || negLabel >= aodMCTrackArray->GetEntriesFast()) return kFALSE;
+      AliAODMCParticle* posDaughter = static_cast<AliAODMCParticle*>(aodMCTrackArray->At(posLabel));
+      AliAODMCParticle* negDaughter = static_cast<AliAODMCParticle*>(aodMCTrackArray->At(negLabel));
+      if (!posDaughter || !negDaughter) return kFALSE;
+      if (TMath::Abs(posDaughter->GetPdgCode()) != 11 || TMath::Abs(negDaughter->GetPdgCode()) != 11) return kFALSE;
+      if (posDaughter->GetPdgCode() == negDaughter->GetPdgCode()) return kFALSE;
+      if (posDaughter->GetMother() != negDaughter->GetMother() || posDaughter->GetMother() < 0) return kFALSE;
+      if (posDaughter->GetMCProcessCode() != 5 || negDaughter->GetMCProcessCode() != 5) return kFALSE;
+      gammaLabel = posDaughter->GetMother();
+      if (gammaLabel >= aodMCTrackArray->GetEntriesFast()) return kFALSE;
+      AliAODMCParticle* gamma = static_cast<AliAODMCParticle*>(aodMCTrackArray->At(gammaLabel));
+      if (!gamma || gamma->GetPdgCode() != 22) return kFALSE;
+      pi0Label = gamma->GetMother();
+      if (pi0Label < 0 || pi0Label >= aodMCTrackArray->GetEntriesFast()) return kFALSE;
+      AliAODMCParticle* pi0 = static_cast<AliAODMCParticle*>(aodMCTrackArray->At(pi0Label));
+      if (!pi0 || pi0->GetPdgCode() != 111) return kFALSE;
+      gammaPt = gamma->Pt();
+      gammaEta = gamma->Eta();
+      const Double_t xConv = 0.5 * (posDaughter->Xv() + negDaughter->Xv());
+      const Double_t yConv = 0.5 * (posDaughter->Yv() + negDaughter->Yv());
+      rConv = TMath::Sqrt(xConv * xConv + yConv * yConv);
+    } else if (fInputEvent->IsA() == AliESDEvent::Class()) {
+      if (!fMCEvent) return kFALSE;
+      AliVParticle* posDaughter = candidate->GetPositiveMCDaughter(fMCEvent);
+      AliVParticle* negDaughter = candidate->GetNegativeMCDaughter(fMCEvent);
+      if (!posDaughter || !negDaughter) return kFALSE;
+      posLabel = TMath::Abs(posLabel);
+      negLabel = TMath::Abs(negLabel);
+      if (TMath::Abs(posDaughter->PdgCode()) != 11 || TMath::Abs(negDaughter->PdgCode()) != 11) return kFALSE;
+      if (posDaughter->PdgCode() == negDaughter->PdgCode()) return kFALSE;
+      if (posDaughter->GetMother() != negDaughter->GetMother() || posDaughter->GetMother() < 0) return kFALSE;
+      AliMCParticle* posMC = dynamic_cast<AliMCParticle*>(posDaughter);
+      AliMCParticle* negMC = dynamic_cast<AliMCParticle*>(negDaughter);
+      if (!posMC || !negMC || !posMC->Particle() || !negMC->Particle()) return kFALSE;
+      if (posMC->Particle()->GetUniqueID() != 5 || negMC->Particle()->GetUniqueID() != 5) return kFALSE;
+      gammaLabel = posDaughter->GetMother();
+      AliVParticle* gamma = fMCEvent->GetTrack(gammaLabel);
+      if (!gamma || gamma->PdgCode() != 22) return kFALSE;
+      pi0Label = gamma->GetMother();
+      if (pi0Label < 0) return kFALSE;
+      AliVParticle* pi0 = fMCEvent->GetTrack(pi0Label);
+      if (!pi0 || pi0->PdgCode() != 111) return kFALSE;
+      gammaPt = gamma->Pt();
+      gammaEta = gamma->Eta();
+      const Double_t xConv = 0.5 * (posMC->Xv() + negMC->Xv());
+      const Double_t yConv = 0.5 * (posMC->Yv() + negMC->Yv());
+      rConv = TMath::Sqrt(xConv * xConv + yConv * yConv);
+    } else {
+      return kFALSE;
+    }
+
+    if (gammaPt < photonGatePtMin || gammaPt >= photonGatePtMax || TMath::Abs(gammaEta) >= 0.8) return kFALSE;
+    kind = (fInputEvent->IsA() == AliESDEvent::Class()) ? IsTruePhotonESD(candidate) : IsTruePhotonAOD(candidate);
+    return kTRUE;
+  };
+
+  auto photonCutReasonFromDelta = [&] (const std::vector<Double_t>& before, TH1F* hist, Bool_t selected) -> TString {
+    if (selected) return "out";
+    if (!hist) return "unknown";
+    for (Int_t i = 1; i <= hist->GetNbinsX(); ++i) {
+      if (i == AliConversionPhotonCuts::kPhotonIn + 1) continue;
+      if (hist->GetBinContent(i) > before.at(i)) {
+        TString label = hist->GetXaxis()->GetBinLabel(i);
+        return label.Length() ? label : Form("bin%d", i);
+      }
+    }
+    return "unknown";
+  };
+
+  auto dumpPhotonGate = [&] (AliAODConversionPhoton* candidate, Int_t candidateIndex, const char* stage,
+                             Int_t passesHeaderCriterion, Bool_t isFromSelectedHeader, Int_t photonSelected,
+                             const TString& photonCutReason) {
+    if (!doPhotonGateDump || !photonGateDump.is_open()) return;
+    Int_t kind = 9;
+    Int_t posLabel = -1;
+    Int_t negLabel = -1;
+    Int_t gammaLabel = -1;
+    Int_t pi0Label = -1;
+    Double_t gammaPt = -1.;
+    Double_t gammaEta = -99.;
+    Double_t rConv = -1.;
+    if (!getTruePi0ConvInfo(candidate, kind, posLabel, negLabel, gammaLabel, pi0Label, gammaPt, gammaEta, rConv)) return;
+
+    TString currentFile;
+    Long64_t readEntry = -1;
+    Int_t aodEventNumber = -1;
+    getInputLocation(currentFile, readEntry, aodEventNumber);
+    const Int_t posHeaderClass = fiEventCut ? fiEventCut->IsParticleFromBGEvent(posLabel, fMCEvent, fInputEvent) : -1;
+    const Int_t negHeaderClass = fiEventCut ? fiEventCut->IsParticleFromBGEvent(negLabel, fMCEvent, fInputEvent) : -1;
+    AliVTrack* negTrack = fiPhotonCut ? fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelNegative()) : NULL;
+    AliVTrack* posTrack = fiPhotonCut ? fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelPositive()) : NULL;
+
+    photonGateDump << fiEventCut->GetCutNumber().Data() << "\t"
+                   << currentFile.Data() << "\t"
+                   << readEntry << "\t"
+                   << aodEventNumber << "\t"
+                   << (fInputEvent ? fInputEvent->GetRunNumber() : -1) << "\t"
+                   << candidateIndex << "\t"
+                   << stage << "\t"
+                   << passesHeaderCriterion << "\t"
+                   << (isFromSelectedHeader ? 1 : 0) << "\t"
+                   << photonSelected << "\t"
+                   << photonCutReason.Data() << "\t"
+                   << kind << "\t"
+                   << posLabel << "\t"
+                   << negLabel << "\t"
+                   << gammaLabel << "\t"
+                   << pi0Label << "\t"
+                   << gammaPt << "\t"
+                   << gammaEta << "\t"
+                   << rConv << "\t"
+                   << posHeaderClass << "\t"
+                   << negHeaderClass << "\t"
+                   << (negTrack ? negTrack->Pt() : -1.) << "\t"
+                   << (posTrack ? posTrack->Pt() : -1.) << "\t"
+                   << (negTrack ? negTrack->Eta() : -99.) << "\t"
+                   << (posTrack ? posTrack->Eta() : -99.) << "\t"
+                   << photonGatePtMin << "\t"
+                   << photonGatePtMax << "\n";
+  };
 
   // Loop over Photon Candidates allocated by ReaderV1
+  Int_t debugCandidateIndex = -1;
   for (TObject *iObj : *fReaderGammas){
+    debugCandidateIndex++;
 
     AliAODConversionPhoton *iCandidate = dynamic_cast<AliAODConversionPhoton*>(iObj);
     if (!iCandidate) { AliWarning("Non AliAODConversionPhoton type object in fReaderGammas.\n"); continue; }
 
     Bool_t lIsFromSelectedHeader = kTRUE;
     if(fIsMC){
-      if (!fiEventCut->PhotonPassesAddedParticlesCriterion(fMCEvent, fInputEvent, *iCandidate, lIsFromSelectedHeader)) continue;
+      const Bool_t passesAddedParticlesCriterion = fiEventCut->PhotonPassesAddedParticlesCriterion(fMCEvent, fInputEvent, *iCandidate, lIsFromSelectedHeader);
+      if (!passesAddedParticlesCriterion) {
+        dumpPhotonGate(iCandidate, debugCandidateIndex, "headerReject", 0, lIsFromSelectedHeader, -1, "beforePhotonCuts");
+        continue;
+      }
     }
 
-    if(!fiPhotonCut->PhotonIsSelected(iCandidate,fInputEvent)) continue;
-    if(!fiPhotonCut->InPlaneOutOfPlaneCut(iCandidate->GetPhotonPhi(),fEventPlaneAngle)) continue;
+    TH1F* photonCutIndexHist = fiPhotonCut ? fiPhotonCut->GetPhotonCutIndexHistogram() : NULL;
+    std::vector<Double_t> photonCutBins((photonCutIndexHist ? photonCutIndexHist->GetNbinsX() : 0) + 1, 0.);
+    if (photonCutIndexHist) {
+      for (Int_t iBin = 1; iBin <= photonCutIndexHist->GetNbinsX(); ++iBin) photonCutBins[iBin] = photonCutIndexHist->GetBinContent(iBin);
+    }
+    const Bool_t photonIsSelected = fiPhotonCut->PhotonIsSelected(iCandidate,fInputEvent);
+    const TString photonCutReason = photonCutReasonFromDelta(photonCutBins, photonCutIndexHist, photonIsSelected);
+    if(!photonIsSelected) {
+      dumpPhotonGate(iCandidate, debugCandidateIndex, "photonCutReject", 1, lIsFromSelectedHeader, 0, photonCutReason);
+      continue;
+    }
+    if(!fiPhotonCut->InPlaneOutOfPlaneCut(iCandidate->GetPhotonPhi(),fEventPlaneAngle)) {
+      dumpPhotonGate(iCandidate, debugCandidateIndex, "eventPlaneReject", 1, lIsFromSelectedHeader, 0, "EventPlane");
+      continue;
+    }
 
     // if no further cuts, add to fGammaCandidates and we are done. If header criterion is fullfilled, also fill histos and tree
     if (!(lUseElecShareCut || lUseTooCloseCut)){
@@ -3635,20 +3869,29 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
             fHistoXGBoutput_MC[fiCut]->Fill( modelPred );
 	          //if (iCandidate->Pt() >= 1.0 && iCandidate->Pt() <= 1.2) cout << iCandidate->Pt() << " " <<  modelPred << endl;
             if (lIsFromSelectedHeader){
+              dumpPhotonGate(iCandidate, debugCandidateIndex, "fillHistosAndTree", 1, lIsFromSelectedHeader, 1, photonCutReason);
               fillHistosAndTree(iCandidate);
+            } else {
+              dumpPhotonGate(iCandidate, debugCandidateIndex, "selectedHeaderFalse", 1, lIsFromSelectedHeader, 1, photonCutReason);
             }
+          } else {
+            dumpPhotonGate(iCandidate, debugCandidateIndex, "mlReject", 1, lIsFromSelectedHeader, 1, photonCutReason);
           }
         }
       else{
         fGammaCandidates->Add(iCandidate);
         if (lIsFromSelectedHeader){
+          dumpPhotonGate(iCandidate, debugCandidateIndex, "fillHistosAndTree", 1, lIsFromSelectedHeader, 1, photonCutReason);
           fillHistosAndTree(iCandidate);
+        } else {
+          dumpPhotonGate(iCandidate, debugCandidateIndex, "selectedHeaderFalse", 1, lIsFromSelectedHeader, 1, photonCutReason);
         }
       }
     }
 
     else{
       // we have one of lUseElecShareCut and lUseTooCloseCut -> we cant fill the histos before having looked at all photons
+      dumpPhotonGate(iCandidate, debugCandidateIndex, "storedForPostCuts", 1, lIsFromSelectedHeader, 1, photonCutReason);
       fMapPhotonHeaders.insert({iCandidate, lIsFromSelectedHeader});
     }
   }
@@ -3756,7 +3999,10 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     else {
       fGammaCandidates->Add(iPhotonHeader.first);
         if (iPhotonHeader.second){
+          dumpPhotonGate(iCandidate, -1, "fillHistosAndTreePostCuts", 1, iPhotonHeader.second, 1, "out");
           fillHistosAndTree(iPhotonHeader.first);
+        } else {
+          dumpPhotonGate(iCandidate, -1, "selectedHeaderFalsePostCuts", 1, iPhotonHeader.second, 1, "out");
         }
     }
   }

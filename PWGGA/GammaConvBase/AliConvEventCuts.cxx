@@ -8613,12 +8613,6 @@ Float_t AliConvEventCuts::GetWeightForMesonNew(Int_t index, AliMCEvent *mcEvent,
   {
     if ((theWeight < 0) || !isfinite(theWeight))
     {
-      std::string lWarningMessage(
-        Form("checkSanitizeAndReturnWeight(): WARNING: Weight for meson %d is negative or not finite: %f.\n"
-             "It will be set to 0 - effectively rejecting the particle.\n"
-             "This points to a severe problem - investigate!\n",
-             thePdgCode, 
-             theWeight));
       AliWarning(Form("checkSanitizeAndReturnWeight(): WARNING: Weight for meson %d is negative or not finite: %f.\n"
                       "It will be set to 0 - effectively rejecting the particle.\n"
                       "This points to a severe problem - investigate!\n",
