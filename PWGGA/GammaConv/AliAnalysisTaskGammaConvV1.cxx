@@ -57,6 +57,7 @@
 #include "AliEventplane.h"
 #include "AliAODEvent.h"
 #include "AliInputEventHandler.h"
+#include "AliPIDResponse.h"
 #include "TSystem.h"
 #include <vector>
 #include <map>
@@ -3653,6 +3654,10 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
                    << "\tpassesHeaderCriterion\tisFromSelectedHeader\tphotonSelected\tphotonCutReason"
                    << "\tkind\tposLabel\tnegLabel\tgammaLabel\tpi0Label\tgammaPt\tgammaEta\trConv"
                    << "\tposHeaderClass\tnegHeaderClass\ttrackNegPt\ttrackPosPt\ttrackNegEta\ttrackPosEta"
+                   << "\ttrackNegLabel\ttrackPosLabel\ttrackNegP\ttrackPosP\ttrackNegTPCsignal\ttrackPosTPCsignal"
+                   << "\ttrackNegTPCncls\ttrackPosTPCncls\ttrackNegStatus\ttrackPosStatus"
+                   << "\tnegTPCnSigmaE\tposTPCnSigmaE\tnegTPCnSigmaPi\tposTPCnSigmaPi"
+                   << "\tnegTOFnSigmaE\tposTOFnSigmaE\tnegITSnSigmaE\tposITSnSigmaE"
                    << "\tdebugPtMin\tdebugPtMax\n";
   }
 
@@ -3783,6 +3788,15 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     const Int_t negHeaderClass = fiEventCut ? fiEventCut->IsParticleFromBGEvent(negLabel, fMCEvent, fInputEvent) : -1;
     AliVTrack* negTrack = fiPhotonCut ? fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelNegative()) : NULL;
     AliVTrack* posTrack = fiPhotonCut ? fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelPositive()) : NULL;
+    AliPIDResponse* pidResponse = fiPhotonCut ? fiPhotonCut->GetPIDResponse() : NULL;
+    const Double_t negTPCnSigmaE = (pidResponse && negTrack) ? pidResponse->NumberOfSigmasTPC(negTrack, AliPID::kElectron) : -999.;
+    const Double_t posTPCnSigmaE = (pidResponse && posTrack) ? pidResponse->NumberOfSigmasTPC(posTrack, AliPID::kElectron) : -999.;
+    const Double_t negTPCnSigmaPi = (pidResponse && negTrack) ? pidResponse->NumberOfSigmasTPC(negTrack, AliPID::kPion) : -999.;
+    const Double_t posTPCnSigmaPi = (pidResponse && posTrack) ? pidResponse->NumberOfSigmasTPC(posTrack, AliPID::kPion) : -999.;
+    const Double_t negTOFnSigmaE = (pidResponse && negTrack) ? pidResponse->NumberOfSigmasTOF(negTrack, AliPID::kElectron) : -999.;
+    const Double_t posTOFnSigmaE = (pidResponse && posTrack) ? pidResponse->NumberOfSigmasTOF(posTrack, AliPID::kElectron) : -999.;
+    const Double_t negITSnSigmaE = (pidResponse && negTrack) ? pidResponse->NumberOfSigmasITS(negTrack, AliPID::kElectron) : -999.;
+    const Double_t posITSnSigmaE = (pidResponse && posTrack) ? pidResponse->NumberOfSigmasITS(posTrack, AliPID::kElectron) : -999.;
 
     photonGateDump << fiEventCut->GetCutNumber().Data() << "\t"
                    << currentFile.Data() << "\t"
@@ -3809,6 +3823,24 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
                    << (posTrack ? posTrack->Pt() : -1.) << "\t"
                    << (negTrack ? negTrack->Eta() : -99.) << "\t"
                    << (posTrack ? posTrack->Eta() : -99.) << "\t"
+                   << (candidate ? candidate->GetTrackLabelNegative() : -1) << "\t"
+                   << (candidate ? candidate->GetTrackLabelPositive() : -1) << "\t"
+                   << (negTrack ? negTrack->P() : -1.) << "\t"
+                   << (posTrack ? posTrack->P() : -1.) << "\t"
+                   << (negTrack ? negTrack->GetTPCsignal() : -1.) << "\t"
+                   << (posTrack ? posTrack->GetTPCsignal() : -1.) << "\t"
+                   << (negTrack ? negTrack->GetTPCNcls() : -1) << "\t"
+                   << (posTrack ? posTrack->GetTPCNcls() : -1) << "\t"
+                   << (negTrack ? negTrack->GetStatus() : 0) << "\t"
+                   << (posTrack ? posTrack->GetStatus() : 0) << "\t"
+                   << negTPCnSigmaE << "\t"
+                   << posTPCnSigmaE << "\t"
+                   << negTPCnSigmaPi << "\t"
+                   << posTPCnSigmaPi << "\t"
+                   << negTOFnSigmaE << "\t"
+                   << posTOFnSigmaE << "\t"
+                   << negITSnSigmaE << "\t"
+                   << posITSnSigmaE << "\t"
                    << photonGatePtMin << "\t"
                    << photonGatePtMax << "\n";
   };
@@ -3999,10 +4031,10 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     else {
       fGammaCandidates->Add(iPhotonHeader.first);
         if (iPhotonHeader.second){
-          dumpPhotonGate(iCandidate, -1, "fillHistosAndTreePostCuts", 1, iPhotonHeader.second, 1, "out");
+          dumpPhotonGate(iPhotonHeader.first, -1, "fillHistosAndTreePostCuts", 1, iPhotonHeader.second, 1, "out");
           fillHistosAndTree(iPhotonHeader.first);
         } else {
-          dumpPhotonGate(iCandidate, -1, "selectedHeaderFalsePostCuts", 1, iPhotonHeader.second, 1, "out");
+          dumpPhotonGate(iPhotonHeader.first, -1, "selectedHeaderFalsePostCuts", 1, iPhotonHeader.second, 1, "out");
         }
     }
   }

@@ -8550,10 +8550,6 @@ Float_t AliConvEventCuts::GetWeightForMeson(Int_t index, AliMCEvent *mcEvent, Al
         : static_cast<TH2*>(nullptr);
 
     if (!lTH2){
-        AliWarning(Form("AliConvEventCuts::GetWeightForMeson()::fillMesonHisto():\n"
-                        "lTH2 is nullptr even though lWeightNew is sane.\n"
-                        "PDG code: %d, mesonPt = %f\n",
-                        lPDG, mesonPt));
         return false;              
     }
     lTH2->Fill(mesonPt, lRelDiff);
