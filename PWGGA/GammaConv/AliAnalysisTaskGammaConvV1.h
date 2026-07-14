@@ -322,6 +322,23 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH2F**                            fHistoTruePrimaryConvGammaReaderMissingMCPtDaughterPtAsym; //!
     TH2F**                            fHistoTruePrimaryConvGammaReaderMatchedMCPtMaxAbsDaughterEta; //!
     TH2F**                            fHistoTruePrimaryConvGammaReaderMissingMCPtMaxAbsDaughterEta; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos; //!
+    TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass; //!
     vector<Int_t>                     fQA7SelectedConversionLabels; //!
     TH2F**                            fHistoCombinatorialPt;                        //!
     TH3F**                            fHistoCombinatorialMothersPt;                 //!
@@ -579,7 +596,7 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
 
     AliAnalysisTaskGammaConvV1(const AliAnalysisTaskGammaConvV1&); // Prevent copy-construction
     AliAnalysisTaskGammaConvV1 &operator=(const AliAnalysisTaskGammaConvV1&); // Prevent assignment
-    ClassDef(AliAnalysisTaskGammaConvV1, 81);
+    ClassDef(AliAnalysisTaskGammaConvV1, 82);
 };
 
 #endif

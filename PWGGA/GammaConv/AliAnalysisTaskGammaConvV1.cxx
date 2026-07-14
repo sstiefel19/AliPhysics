@@ -261,6 +261,23 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoTruePrimaryConvGammaReaderMissingMCPtDaughterPtAsym(NULL),
   fHistoTruePrimaryConvGammaReaderMatchedMCPtMaxAbsDaughterEta(NULL),
   fHistoTruePrimaryConvGammaReaderMissingMCPtMaxAbsDaughterEta(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass(NULL),
   fQA7SelectedConversionLabels(),
   fHistoCombinatorialPt(NULL),
   fHistoCombinatorialMothersPt(NULL),
@@ -679,6 +696,23 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoTruePrimaryConvGammaReaderMissingMCPtDaughterPtAsym(NULL),
   fHistoTruePrimaryConvGammaReaderMatchedMCPtMaxAbsDaughterEta(NULL),
   fHistoTruePrimaryConvGammaReaderMissingMCPtMaxAbsDaughterEta(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass(NULL),
   fQA7SelectedConversionLabels(),
   fHistoCombinatorialPt(NULL),
   fHistoCombinatorialMothersPt(NULL),
@@ -2047,6 +2081,23 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoTruePrimaryConvGammaReaderMissingMCPtDaughterPtAsym = new TH2F*[fnCuts];
         fHistoTruePrimaryConvGammaReaderMatchedMCPtMaxAbsDaughterEta = new TH2F*[fnCuts];
         fHistoTruePrimaryConvGammaReaderMissingMCPtMaxAbsDaughterEta = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos = new TH2F*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass = new TH2F*[fnCuts];
       }
     }
 
@@ -2830,6 +2881,88 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
           for (Int_t i = 0; i < 9; ++i) fHistoTruePrimaryConvGammaReaderMatchMCPtReason[iCut]->GetYaxis()->SetBinLabel(i + 1, readerMatchReasonLabels[i]);
           fHistoTruePrimaryConvGammaReaderMatchMCPtReason[iCut]->Sumw2();
           fTrueList[iCut]->Add(fHistoTruePrimaryConvGammaReaderMatchMCPtReason[iCut]);
+
+          auto createReaderTrackDiagnostic = [&](const char *name, Int_t nYBins, Double_t yMin, Double_t yMax) -> TH2F* {
+            TH2F *histogram = new TH2F(name, name, nBinsPt, arrPtBinning, nYBins, yMin, yMax);
+            histogram->Sumw2();
+            fTrueList[iCut]->Add(histogram);
+            return histogram;
+          };
+          fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackMultiplicity_ENeg", 4, -0.5, 3.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackMultiplicity_EPos", 4, -0.5, 3.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackIDCategory_ENeg", 2, -0.5, 1.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackIDCategory_EPos", 2, -0.5, 1.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackLabelSign_ENeg", 2, -0.5, 1.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackLabelSign_EPos", 2, -0.5, 1.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackFilterBit_ENeg", 33, -0.5, 32.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackFilterBit_EPos", 33, -0.5, 32.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackStatusFlag_ENeg", 9, -0.5, 8.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackStatusFlag_EPos", 9, -0.5, 8.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackTPCNcls_ENeg", 161, -0.5, 160.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackTPCNcls_EPos", 161, -0.5, 160.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackTPCCrossedRows_ENeg", 161, -0.5, 160.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackTPCCrossedRows_EPos", 161, -0.5, 160.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackTPCSignalN_ENeg", 161, -0.5, 160.5);
+          fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_TrackTPCSignalN_EPos", 161, -0.5, 160.5);
+          fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass[iCut] =
+            createReaderTrackDiagnostic("MC_TruePrimaryConvGammaReader_MCPt_SatellitePairClass", 8, -0.5, 7.5);
+
+          const char *multiplicityLabels[4] = {"0", "1", "2", ">=3"};
+          const char *idCategoryLabels[2] = {"negative ID", "nonnegative ID"};
+          const char *labelSignLabels[2] = {"negative MC label", "nonnegative MC label"};
+          const char *statusLabels[9] = {"none", "ITS in", "ITS out", "ITS refit", "TPC in", "TPC out", "TPC refit", "TOF out", "TIME"};
+          const char *satellitePairLabels[8] = {
+            "exact MC pair", "track-reference pair, MC mismatch", "both MC labels, not paired",
+            "e- MC label only", "e+ MC label only", "neither MC label",
+            "satellite unavailable", "invalid truth daughters"
+          };
+          TH2F *multiplicityHistograms[2] = {
+            fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg[iCut],
+            fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos[iCut]
+          };
+          TH2F *idCategoryHistograms[2] = {
+            fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg[iCut],
+            fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos[iCut]
+          };
+          TH2F *labelSignHistograms[2] = {
+            fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg[iCut],
+            fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos[iCut]
+          };
+          TH2F *statusHistograms[2] = {
+            fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg[iCut],
+            fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos[iCut]
+          };
+          TH2F *filterBitHistograms[2] = {
+            fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg[iCut],
+            fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos[iCut]
+          };
+          for (Int_t charge = 0; charge < 2; ++charge) {
+            for (Int_t i = 0; i < 4; ++i) multiplicityHistograms[charge]->GetYaxis()->SetBinLabel(i + 1, multiplicityLabels[i]);
+            for (Int_t i = 0; i < 2; ++i) {
+              idCategoryHistograms[charge]->GetYaxis()->SetBinLabel(i + 1, idCategoryLabels[i]);
+              labelSignHistograms[charge]->GetYaxis()->SetBinLabel(i + 1, labelSignLabels[i]);
+            }
+            filterBitHistograms[charge]->GetYaxis()->SetBinLabel(1, "no filter bits");
+            for (Int_t bit = 0; bit < 32; ++bit) filterBitHistograms[charge]->GetYaxis()->SetBinLabel(bit + 2, Form("bit %d", bit));
+            for (Int_t i = 0; i < 9; ++i) statusHistograms[charge]->GetYaxis()->SetBinLabel(i + 1, statusLabels[i]);
+          }
+          for (Int_t i = 0; i < 8; ++i) fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass[iCut]->GetYaxis()->SetBinLabel(i + 1, satellitePairLabels[i]);
 
           const Int_t nBinsMinDaughterPtReaderMatch = 222;
           Double_t minDaughterPtReaderMatchBinning[nBinsMinDaughterPtReaderMatch + 1];
@@ -3911,6 +4044,8 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
 
     std::map<Int_t, Int_t> trackIdToMCLabel;
     std::map<Int_t, Int_t> mcLabelTrackMultiplicity;
+    std::map<Int_t, std::vector<AliAODTrack*> > mcLabelTracks;
+    std::map<Int_t, std::vector<Int_t> > mcLabelTrackIndices;
     const Int_t nAODTracks = fInputEvent->GetNumberOfTracks();
     const Int_t nAODMCParticles = fAODMCTrackArray ? fAODMCTrackArray->GetEntriesFast() : 0;
     for (Int_t iTrack = 0; iTrack < nAODTracks; ++iTrack) {
@@ -3920,6 +4055,8 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
       if (mcLabel < 0 || mcLabel >= nAODMCParticles) continue;
       trackIdToMCLabel[track->GetID()] = mcLabel;
       ++mcLabelTrackMultiplicity[mcLabel];
+      mcLabelTracks[mcLabel].push_back(track);
+      mcLabelTrackIndices[mcLabel].push_back(iTrack);
     }
 
     auto resolveRawCandidateLeg = [&](AliAODConversionPhoton *candidate, Bool_t positive) -> Int_t {
@@ -3953,14 +4090,40 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     TClonesArray *inputGammas = fV0Reader->GetInputGammas();
     const Bool_t satelliteBranchAvailable = inputGammas != NULL;
     std::set<std::pair<Int_t, Int_t> > rawSatellitePairs;
+    std::set<std::pair<Int_t, Int_t> > rawSatelliteTrackReferencePairs;
+    std::set<Int_t> rawSatelliteLabels;
     if (inputGammas) {
       for (Int_t iGamma = 0; iGamma < inputGammas->GetEntriesFast(); ++iGamma) {
         AliAODConversionPhoton *candidate = dynamic_cast<AliAODConversionPhoton*>(inputGammas->At(iGamma));
+        if (!candidate) continue;
+        rawSatelliteTrackReferencePairs.insert(canonicalPair(candidate->GetTrackLabelPositive(), candidate->GetTrackLabelNegative()));
         const Int_t posLabel = resolveRawCandidateLeg(candidate, kTRUE);
         const Int_t negLabel = resolveRawCandidateLeg(candidate, kFALSE);
+        if (posLabel >= 0) rawSatelliteLabels.insert(posLabel);
+        if (negLabel >= 0) rawSatelliteLabels.insert(negLabel);
         if (posLabel >= 0 && negLabel >= 0) rawSatellitePairs.insert(canonicalPair(posLabel, negLabel));
       }
     }
+
+    auto rawTrackReferencePairFound = [&](Int_t firstMCLabel, Int_t secondMCLabel) -> Bool_t {
+      const std::vector<AliAODTrack*> &firstTracks = mcLabelTracks[firstMCLabel];
+      const std::vector<AliAODTrack*> &secondTracks = mcLabelTracks[secondMCLabel];
+      const std::vector<Int_t> &firstIndices = mcLabelTrackIndices[firstMCLabel];
+      const std::vector<Int_t> &secondIndices = mcLabelTrackIndices[secondMCLabel];
+      for (size_t first = 0; first < firstTracks.size(); ++first) {
+        const Int_t firstReferences[2] = {firstIndices[first], firstTracks[first]->GetID()};
+        for (size_t second = 0; second < secondTracks.size(); ++second) {
+          const Int_t secondReferences[2] = {secondIndices[second], secondTracks[second]->GetID()};
+          for (Int_t firstType = 0; firstType < 2; ++firstType) {
+            for (Int_t secondType = 0; secondType < 2; ++secondType) {
+              if (rawSatelliteTrackReferencePairs.find(canonicalPair(firstReferences[firstType], secondReferences[secondType])) != rawSatelliteTrackReferencePairs.end())
+                return kTRUE;
+            }
+          }
+        }
+      }
+      return kFALSE;
+    };
 
     std::set<std::pair<Int_t, Int_t> > readerPairs;
     for (TObject *object : *fReaderGammas) {
@@ -4005,8 +4168,52 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
 
       if (!electron || !positron || electronLabel < 0 || positronLabel < 0) {
         fHistoTruePrimaryConvGammaReaderMatchMCPtReason[fiCut]->Fill(photonPt, 8., weight);
+        fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass[fiCut]->Fill(photonPt, 7., weight);
         continue;
       }
+
+      auto fillTrackDiagnostics = [&](Int_t mcLabel, Bool_t positive) {
+        TH2F *multiplicityHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackMultiplicityENeg[fiCut];
+        TH2F *idCategoryHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackIDCategoryENeg[fiCut];
+        TH2F *labelSignHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackLabelSignENeg[fiCut];
+        TH2F *filterBitHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackFilterBitENeg[fiCut];
+        TH2F *statusFlagHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackStatusFlagENeg[fiCut];
+        TH2F *tpcNclsHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackTPCNclsENeg[fiCut];
+        TH2F *tpcCrossedRowsHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackTPCCrossedRowsENeg[fiCut];
+        TH2F *tpcSignalNHistogram = positive ? fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos[fiCut] : fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg[fiCut];
+        const std::vector<AliAODTrack*> &tracks = mcLabelTracks[mcLabel];
+        multiplicityHistogram->Fill(photonPt, TMath::Min(static_cast<Int_t>(tracks.size()), 3), weight);
+        const ULong64_t statusBits[8] = {
+          AliVTrack::kITSin, AliVTrack::kITSout, AliVTrack::kITSrefit, AliVTrack::kTPCin,
+          AliVTrack::kTPCout, AliVTrack::kTPCrefit, AliVTrack::kTOFout, AliVTrack::kTIME
+        };
+        for (AliAODTrack *track : tracks) {
+          idCategoryHistogram->Fill(photonPt, track->GetID() < 0 ? 0. : 1., weight);
+          labelSignHistogram->Fill(photonPt, track->GetLabel() < 0 ? 0. : 1., weight);
+          const UInt_t filterMap = track->GetFilterMap();
+          if (filterMap == 0) {
+            filterBitHistogram->Fill(photonPt, 0., weight);
+          } else {
+            for (Int_t bit = 0; bit < 32; ++bit) {
+              if (filterMap & (static_cast<UInt_t>(1) << bit)) filterBitHistogram->Fill(photonPt, bit + 1., weight);
+            }
+          }
+          const ULong64_t status = track->GetStatus();
+          Bool_t statusFilled = kFALSE;
+          for (Int_t bit = 0; bit < 8; ++bit) {
+            if (status & statusBits[bit]) {
+              statusFlagHistogram->Fill(photonPt, bit + 1., weight);
+              statusFilled = kTRUE;
+            }
+          }
+          if (!statusFilled) statusFlagHistogram->Fill(photonPt, 0., weight);
+          tpcNclsHistogram->Fill(photonPt, TMath::Min(track->GetTPCNcls(), static_cast<UShort_t>(160)), weight);
+          tpcCrossedRowsHistogram->Fill(photonPt, TMath::Min(static_cast<Double_t>(track->GetTPCNCrossedRows()), 160.), weight);
+          tpcSignalNHistogram->Fill(photonPt, TMath::Min(track->GetTPCsignalN(), static_cast<UShort_t>(160)), weight);
+        }
+      };
+      fillTrackDiagnostics(electronLabel, kFALSE);
+      fillTrackDiagnostics(positronLabel, kTRUE);
 
       const Bool_t electronTrackFound = mcLabelTrackMultiplicity[electronLabel] > 0;
       const Bool_t positronTrackFound = mcLabelTrackMultiplicity[positronLabel] > 0;
@@ -4015,6 +4222,19 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
       const std::pair<Int_t, Int_t> daughterPair = canonicalPair(electronLabel, positronLabel);
       const Bool_t rawSatelliteCandidateFound = rawSatellitePairs.find(daughterPair) != rawSatellitePairs.end();
       const Bool_t readerCandidateFound = readerPairs.find(daughterPair) != readerPairs.end();
+
+      Int_t satellitePairClass = 5;
+      if (!satelliteBranchAvailable) satellitePairClass = 6;
+      else if (rawSatelliteCandidateFound) satellitePairClass = 0;
+      else if (rawTrackReferencePairFound(electronLabel, positronLabel)) satellitePairClass = 1;
+      else {
+        const Bool_t electronLabelFound = rawSatelliteLabels.find(electronLabel) != rawSatelliteLabels.end();
+        const Bool_t positronLabelFound = rawSatelliteLabels.find(positronLabel) != rawSatelliteLabels.end();
+        if (electronLabelFound && positronLabelFound) satellitePairClass = 2;
+        else if (electronLabelFound) satellitePairClass = 3;
+        else if (positronLabelFound) satellitePairClass = 4;
+      }
+      fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass[fiCut]->Fill(photonPt, satellitePairClass, weight);
 
       if (electronTrackFound) fHistoTruePrimaryConvGammaReaderMatchMCPtStatus[fiCut]->Fill(photonPt, 1., weight);
       if (positronTrackFound) fHistoTruePrimaryConvGammaReaderMatchMCPtStatus[fiCut]->Fill(photonPt, 2., weight);
