@@ -31,6 +31,7 @@
 #include "TH2F.h"
 #include "TH3F.h"
 #include "THnSparse.h"
+#include "TBits.h"
 #include "TCanvas.h"
 #include "TNtuple.h"
 #include "AliAnalysisTask.h"
@@ -48,6 +49,7 @@
 #include "AliESDtrack.h"
 #include "AliESDtrackCuts.h"
 #include "AliGAKFVertex.h"
+#include "AliKFConversionPhoton.h"
 #include "AliGenCocktailEventHeader.h"
 #include "AliConversionAODBGHandlerRP.h"
 #include "AliAODMCParticle.h"
@@ -280,6 +282,9 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass(NULL),
   fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg(NULL),
   fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos(NULL),
+  fSparseTruePrimaryConvGammaReaderQtTopology(NULL),
+  fSparseTruePrimaryConvGammaReaderQtTrackQuality(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts(NULL),
   fQA7SelectedConversionLabels(),
   fHistoCombinatorialPt(NULL),
   fHistoCombinatorialMothersPt(NULL),
@@ -717,6 +722,9 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass(NULL),
   fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg(NULL),
   fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos(NULL),
+  fSparseTruePrimaryConvGammaReaderQtTopology(NULL),
+  fSparseTruePrimaryConvGammaReaderQtTrackQuality(NULL),
+  fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts(NULL),
   fQA7SelectedConversionLabels(),
   fHistoCombinatorialPt(NULL),
   fHistoCombinatorialMothersPt(NULL),
@@ -2104,6 +2112,9 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass = new TH2F*[fnCuts];
         fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg = new THnSparseF*[fnCuts];
         fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos = new THnSparseF*[fnCuts];
+        fSparseTruePrimaryConvGammaReaderQtTopology = new THnSparseF*[fnCuts];
+        fSparseTruePrimaryConvGammaReaderQtTrackQuality = new THnSparseF*[fnCuts];
+        fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts = new TH2F*[fnCuts];
       }
     }
 
@@ -2995,6 +3006,64 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
             fTrueList[iCut]->Add(sparse);
           }
 
+          const Int_t nQtTopologyDimensions = 15;
+          const Int_t qtTopologyBins[nQtTopologyDimensions] = {
+            8, 150, 150, 150, 100, 100, 100, 102, 120, 100, 100, 100, 50, 100, 3
+          };
+          const Double_t qtTopologyMin[nQtTopologyDimensions] = {
+            6., 0., 0., 0., -1., -1., -1., -1.5, -1., 0., -250., 0., 0., 0., -0.5
+          };
+          const Double_t qtTopologyMax[nQtTopologyDimensions] = {
+            10., 0.15, 0.15, 0.15, 1., 1., 1., 100., 5., 200., 250., 0.5, 1., 10., 2.5
+          };
+          fSparseTruePrimaryConvGammaReaderQtTopology[iCut] =
+            new THnSparseF("ESD_TruePrimaryConvGammaReader_QtTopology",
+                           "ESD_TruePrimaryConvGammaReader_QtTopology",
+                           nQtTopologyDimensions, qtTopologyBins, qtTopologyMin, qtTopologyMax);
+          const char *qtTopologyAxisTitles[nQtTopologyDimensions] = {
+            "p_{T,#gamma}^{MC}", "q_{T}^{stored}", "q_{T}^{track}", "q_{T}^{KF rebuild}",
+            "#alpha^{stored}", "#alpha^{track}", "#alpha^{KF rebuild}", "#chi^{2}/NDF",
+            "#Psi_{pair}", "R_{conv}^{reco}", "z_{conv}^{reco}", "truth opening angle",
+            "truth p_{T} asymmetry", "truth min p_{T,e}", "label class"
+          };
+          fSparseTruePrimaryConvGammaReaderQtTopology[iCut]->Sumw2();
+          for (Int_t axis = 0; axis < nQtTopologyDimensions; ++axis)
+            fSparseTruePrimaryConvGammaReaderQtTopology[iCut]->GetAxis(axis)->SetTitle(qtTopologyAxisTitles[axis]);
+          fTrueList[iCut]->Add(fSparseTruePrimaryConvGammaReaderQtTopology[iCut]);
+
+          const Int_t nQtQualityDimensions = 12;
+          const Int_t qtQualityBins[nQtQualityDimensions] = {8, 150, 300, 300, 3, 81, 81, 81, 8, 2, 100, 52};
+          const Double_t qtQualityMin[nQtQualityDimensions] = {6., 0., -0.15, -0.15, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0., -0.02};
+          const Double_t qtQualityMax[nQtQualityDimensions] = {10., 0.15, 0.15, 0.15, 2.5, 161.5, 161.5, 161.5, 7.5, 1.5, 2., 1.02};
+          fSparseTruePrimaryConvGammaReaderQtTrackQuality[iCut] =
+            new THnSparseF("ESD_TruePrimaryConvGammaReader_QtTrackQuality",
+                           "ESD_TruePrimaryConvGammaReader_QtTrackQuality",
+                           nQtQualityDimensions, qtQualityBins, qtQualityMin, qtQualityMax);
+          const char *qtQualityAxisTitles[nQtQualityDimensions] = {
+            "p_{T,#gamma}^{MC}", "q_{T}^{stored}", "q_{T}^{track}-q_{T}^{stored}",
+            "q_{T}^{KF rebuild}-q_{T}^{stored}", "label class", "min TPC N_{cls}",
+            "min TPC crossed rows", "min TPC signal N", "min ITS N_{cls}",
+            "both TPC refit", "max #sigma_{p}/p", "max TPC shared fraction"
+          };
+          fSparseTruePrimaryConvGammaReaderQtTrackQuality[iCut]->Sumw2();
+          for (Int_t axis = 0; axis < nQtQualityDimensions; ++axis)
+            fSparseTruePrimaryConvGammaReaderQtTrackQuality[iCut]->GetAxis(axis)->SetTitle(qtQualityAxisTitles[axis]);
+          fTrueList[iCut]->Add(fSparseTruePrimaryConvGammaReaderQtTrackQuality[iCut]);
+
+          fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts[iCut] =
+            new TH2F("ESD_TruePrimaryConvGammaReader_MCPt_QtDiagnosticCounts",
+                     "ESD_TruePrimaryConvGammaReader_MCPt_QtDiagnosticCounts",
+                     8, 6., 10., 8, -0.5, 7.5);
+          const char *qtDiagnosticLabels[8] = {
+            "true reader candidate", "both tracks", "correct daughter labels", "positive signed labels",
+            "positive labels + both TPC refit", "stored qT pass | conditioned",
+            "track qT pass | conditioned", "KF rebuild qT pass | conditioned"
+          };
+          for (Int_t category = 0; category < 8; ++category)
+            fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts[iCut]->GetYaxis()->SetBinLabel(category + 1, qtDiagnosticLabels[category]);
+          fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts[iCut]->Sumw2();
+          fTrueList[iCut]->Add(fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts[iCut]);
+
           const Int_t nBinsMinDaughterPtReaderMatch = 222;
           Double_t minDaughterPtReaderMatchBinning[nBinsMinDaughterPtReaderMatch + 1];
           for (Int_t i = 0; i <= 100; ++i) minDaughterPtReaderMatchBinning[i] = 0.002 * i;
@@ -3801,6 +3870,128 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     }
   };
 
+  auto fillReaderQtDiagnostic = [&](AliAODConversionPhoton *candidate, AliAODMCParticle *photon) {
+    if (fDoPhotonQA != 7 || !candidate || !photon || photon->Pt() < 6. || photon->Pt() >= 10.) return;
+    const Double_t weight = fWeightJetJetMC * GetPhotonWeight(photon);
+    TH2F *diagnosticCounts = fHistoTruePrimaryConvGammaReaderMCPtQtDiagnosticCounts[fiCut];
+    diagnosticCounts->Fill(photon->Pt(), 0., weight);
+
+    AliVTrack *negativeTrack = fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelNegative());
+    AliVTrack *positiveTrack = fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelPositive());
+    if (!negativeTrack || !positiveTrack) return;
+    diagnosticCounts->Fill(photon->Pt(), 1., weight);
+
+    const Int_t negativeMCLabel = candidate->GetMCLabelNegative();
+    const Int_t positiveMCLabel = candidate->GetMCLabelPositive();
+    const Bool_t correctLabels =
+      TMath::Abs(negativeTrack->GetLabel()) == negativeMCLabel &&
+      TMath::Abs(positiveTrack->GetLabel()) == positiveMCLabel;
+    const Bool_t positiveLabels = correctLabels && negativeTrack->GetLabel() >= 0 && positiveTrack->GetLabel() >= 0;
+    const Bool_t bothTPCRefit =
+      (negativeTrack->GetStatus() & AliVTrack::kTPCrefit) && (positiveTrack->GetStatus() & AliVTrack::kTPCrefit);
+    const Double_t labelClass = positiveLabels ? 2. : (correctLabels ? 1. : 0.);
+    if (correctLabels) diagnosticCounts->Fill(photon->Pt(), 2., weight);
+    if (positiveLabels) diagnosticCounts->Fill(photon->Pt(), 3., weight);
+    if (positiveLabels && bothTPCRefit) diagnosticCounts->Fill(photon->Pt(), 4., weight);
+
+    auto calculateArmenteros = [](const AliVTrack *positive, const AliVTrack *negative,
+                                  Double_t &qt, Double_t &alpha) -> Bool_t {
+      const Double_t sumPx = positive->Px() + negative->Px();
+      const Double_t sumPy = positive->Py() + negative->Py();
+      const Double_t sumPz = positive->Pz() + negative->Pz();
+      const Double_t sumP = TMath::Sqrt(sumPx*sumPx + sumPy*sumPy + sumPz*sumPz);
+      const Double_t negativeP = negative->P();
+      if (sumP <= 0. || negativeP <= 0.) return kFALSE;
+      const Double_t negativePL = (negative->Px()*sumPx + negative->Py()*sumPy + negative->Pz()*sumPz) / sumP;
+      const Double_t positivePL = (positive->Px()*sumPx + positive->Py()*sumPy + positive->Pz()*sumPz) / sumP;
+      const Double_t longitudinalSum = positivePL + negativePL;
+      if (TMath::Abs(longitudinalSum) <= 1.e-20) return kFALSE;
+      const Double_t transverseFraction = 1. - negativePL*negativePL/(negativeP*negativeP);
+      qt = negativeP * TMath::Sqrt(TMath::Max(0., transverseFraction));
+      alpha = (positivePL - negativePL) / longitudinalSum;
+      return kTRUE;
+    };
+
+    Double_t trackQt = -1.;
+    Double_t trackAlpha = 0.;
+    if (!calculateArmenteros(positiveTrack, negativeTrack, trackQt, trackAlpha)) return;
+
+    AliGAKFParticle::SetField(fInputEvent->GetMagneticField());
+    AliGAKFParticle negativeKF(*negativeTrack, 11);
+    AliGAKFParticle positiveKF(*positiveTrack, -11);
+    AliKFConversionPhoton rebuiltKF(negativeKF, positiveKF);
+
+    const Double_t storedQt = candidate->GetArmenterosQt();
+    const Double_t storedAlpha = candidate->GetArmenterosAlpha();
+    const Double_t rebuiltQt = rebuiltKF.GetArmenterosQt();
+    const Double_t rebuiltAlpha = rebuiltKF.GetArmenterosAlpha();
+    const Double_t trackPhotonPt = TMath::Sqrt(TMath::Power(negativeTrack->Px() + positiveTrack->Px(), 2) +
+                                                    TMath::Power(negativeTrack->Py() + positiveTrack->Py(), 2));
+    if (positiveLabels && bothTPCRefit) {
+      if (fiPhotonCut->ArmenterosQtCut(storedAlpha, storedQt, candidate->Pt())) diagnosticCounts->Fill(photon->Pt(), 5., weight);
+      if (fiPhotonCut->ArmenterosQtCut(trackAlpha, trackQt, trackPhotonPt)) diagnosticCounts->Fill(photon->Pt(), 6., weight);
+      if (fiPhotonCut->ArmenterosQtCut(rebuiltAlpha, rebuiltQt, rebuiltKF.Pt())) diagnosticCounts->Fill(photon->Pt(), 7., weight);
+    }
+
+    AliAODMCParticle *negativeMC = negativeMCLabel >= 0 && negativeMCLabel < fAODMCTrackArray->GetEntriesFast()
+      ? static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(negativeMCLabel)) : NULL;
+    AliAODMCParticle *positiveMC = positiveMCLabel >= 0 && positiveMCLabel < fAODMCTrackArray->GetEntriesFast()
+      ? static_cast<AliAODMCParticle*>(fAODMCTrackArray->At(positiveMCLabel)) : NULL;
+    Double_t truthOpeningAngle = -1.;
+    Double_t truthPtAsymmetry = -1.;
+    Double_t truthMinDaughterPt = -1.;
+    if (negativeMC && positiveMC) {
+      const Double_t daughterMomentumProduct = negativeMC->P() * positiveMC->P();
+      if (daughterMomentumProduct > 0.) {
+        const Double_t cosineOpening =
+          (negativeMC->Px()*positiveMC->Px() + negativeMC->Py()*positiveMC->Py() + negativeMC->Pz()*positiveMC->Pz()) /
+          daughterMomentumProduct;
+        truthOpeningAngle = TMath::ACos(TMath::Max(-1., TMath::Min(1., cosineOpening)));
+      }
+      const Double_t daughterPtSum = negativeMC->Pt() + positiveMC->Pt();
+      if (daughterPtSum > 0.) truthPtAsymmetry = TMath::Abs(negativeMC->Pt() - positiveMC->Pt()) / daughterPtSum;
+      truthMinDaughterPt = TMath::Min(negativeMC->Pt(), positiveMC->Pt());
+    }
+
+    Double_t topologyValues[15] = {
+      photon->Pt(), storedQt, trackQt, rebuiltQt, storedAlpha, trackAlpha, rebuiltAlpha,
+      candidate->GetChi2perNDF(), candidate->GetPsiPair(), candidate->GetConversionRadius(), candidate->GetConversionZ(),
+      truthOpeningAngle, truthPtAsymmetry, truthMinDaughterPt, labelClass
+    };
+    fSparseTruePrimaryConvGammaReaderQtTopology[fiCut]->Fill(topologyValues, weight);
+
+    auto relativeMomentumUncertainty = [](const AliVTrack *track) -> Double_t {
+      Double_t covariance[21] = {0.};
+      const Double_t momentum = track->P();
+      if (momentum <= 0. || !track->GetCovarianceXYZPxPyPz(covariance)) return 1.999;
+      const Double_t ux = track->Px()/momentum;
+      const Double_t uy = track->Py()/momentum;
+      const Double_t uz = track->Pz()/momentum;
+      const Double_t variance = ux*ux*covariance[9] + uy*uy*covariance[14] + uz*uz*covariance[20]
+        + 2.*ux*uy*covariance[13] + 2.*ux*uz*covariance[18] + 2.*uy*uz*covariance[19];
+      if (variance < 0.) return 1.999;
+      return TMath::Min(1.999, TMath::Sqrt(variance)/momentum);
+    };
+    auto sharedTPCFraction = [](const AliVTrack *track) -> Double_t {
+      const TBits *clusterMap = track->GetTPCClusterMapPtr();
+      const TBits *sharedMap = track->GetTPCSharedMapPtr();
+      if (!clusterMap || !sharedMap || clusterMap->CountBits() == 0) return -0.01;
+      return TMath::Min(1.019, static_cast<Double_t>(sharedMap->CountBits())/clusterMap->CountBits());
+    };
+
+    Double_t qualityValues[12] = {
+      photon->Pt(), storedQt, trackQt - storedQt, rebuiltQt - storedQt, labelClass,
+      TMath::Min(160., static_cast<Double_t>(TMath::Min(negativeTrack->GetTPCNcls(), positiveTrack->GetTPCNcls()))),
+      TMath::Min(160., TMath::Min(static_cast<Double_t>(negativeTrack->GetTPCCrossedRows()), static_cast<Double_t>(positiveTrack->GetTPCCrossedRows()))),
+      TMath::Min(160., static_cast<Double_t>(TMath::Min(negativeTrack->GetTPCsignalN(), positiveTrack->GetTPCsignalN()))),
+      TMath::Min(7., static_cast<Double_t>(TMath::Min(negativeTrack->GetNcls(0), positiveTrack->GetNcls(0)))),
+      bothTPCRefit ? 1. : 0.,
+      TMath::Max(relativeMomentumUncertainty(negativeTrack), relativeMomentumUncertainty(positiveTrack)),
+      TMath::Max(sharedTPCFraction(negativeTrack), sharedTPCFraction(positiveTrack))
+    };
+    fSparseTruePrimaryConvGammaReaderQtTrackQuality[fiCut]->Fill(qualityValues, weight);
+  };
+
   // ProcessPhotonCandidates() starts after definition of following lambda function
   auto fillHistosAndTree = [&](AliAODConversionPhoton *thePhoton){
 
@@ -3894,6 +4085,7 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
         if (lIsFromSelectedHeader) {
           truePrimaryReaderResults[photonLabel].header = kTRUE;
           fillReaderTrackPIDQuality(iCandidate, photon);
+          fillReaderQtDiagnostic(iCandidate, photon);
         }
         else updateTruePrimaryResult(iCandidate, 0, 1, -1);
       }

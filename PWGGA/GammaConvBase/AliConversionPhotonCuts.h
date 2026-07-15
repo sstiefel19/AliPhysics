@@ -209,6 +209,7 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Bool_t dEdxCuts(AliVTrack * track, AliConversionPhotonBase * photon);
     Bool_t KappaCuts(AliConversionPhotonBase * photon,AliVEvent *event);
     Bool_t ArmenterosQtCut(AliConversionPhotonBase *photon);
+    Bool_t ArmenterosQtCut(Double_t alpha, Double_t qt, Double_t photonPt) const;
     Bool_t AsymmetryCut(AliConversionPhotonBase *photon,AliVEvent *event);
     Bool_t PIDProbabilityCut(AliConversionPhotonBase *photon, AliVEvent * event);
     Bool_t SelectV0Finder(Bool_t onfly){

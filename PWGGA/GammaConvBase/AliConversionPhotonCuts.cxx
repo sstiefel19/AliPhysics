@@ -1630,29 +1630,34 @@ Bool_t AliConversionPhotonCuts::PhotonIsSelected(AliConversionPhotonBase *photon
 
 ///________________________________________________________________________
 Bool_t AliConversionPhotonCuts::ArmenterosQtCut(AliConversionPhotonBase *photon){   // Armenteros Qt Cut
+  return ArmenterosQtCut(photon->GetArmenterosAlpha(), photon->GetArmenterosQt(), photon->GetPhotonPt());
+}
+
+///________________________________________________________________________
+Bool_t AliConversionPhotonCuts::ArmenterosQtCut(Double_t alpha, Double_t qt, Double_t photonPt) const {
   if(fDo2DQt){
     if(fDoQtGammaSelection==1){
-      if ( !(TMath::Power(photon->GetArmenterosAlpha()/fMaxPhotonAsymmetry,2)+TMath::Power(photon->GetArmenterosQt()/fQtMax,2) < 1) ){
+      if ( !(TMath::Power(alpha/fMaxPhotonAsymmetry,2)+TMath::Power(qt/fQtMax,2) < 1) ){
         return kFALSE;
       }
     } else if(fDoQtGammaSelection==2){
-      Float_t qtMaxPtDep = fQtPtMax*photon->GetPhotonPt();
+      Float_t qtMaxPtDep = fQtPtMax*photonPt;
       if (qtMaxPtDep > fQtMax)
         qtMaxPtDep      = fQtMax;
-      if ( !(TMath::Power(photon->GetArmenterosAlpha()/fMaxPhotonAsymmetry,2)+TMath::Power(photon->GetArmenterosQt()/qtMaxPtDep,2) < 1) ){
+      if ( !(TMath::Power(alpha/fMaxPhotonAsymmetry,2)+TMath::Power(qt/qtMaxPtDep,2) < 1) ){
         return kFALSE;
       }
     }
   } else {
     if(fDoQtGammaSelection==1){
-      if(photon->GetArmenterosQt()>fQtMax){
+      if(qt>fQtMax){
         return kFALSE;
       }
     } else if(fDoQtGammaSelection==2){
-      Float_t qtMaxPtDep = fQtPtMax*photon->GetPhotonPt();
+      Float_t qtMaxPtDep = fQtPtMax*photonPt;
       if (qtMaxPtDep > fQtMax)
         qtMaxPtDep      = fQtMax;
-      if(photon->GetArmenterosQt()>qtMaxPtDep){
+      if(qt>qtMaxPtDep){
         return kFALSE;
       }
     }
