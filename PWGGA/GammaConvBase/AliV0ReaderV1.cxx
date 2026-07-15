@@ -782,7 +782,7 @@ Bool_t AliV0ReaderV1::ProcessESDV0s()
 
   AliKFConversionPhoton *fCurrentMotherKFCandidate=NULL;
 
-  if(fESDEvent){
+t  if(fESDEvent){
     for(Int_t currentV0Index=0;currentV0Index<fESDEvent->GetNumberOfV0s();currentV0Index++){
       AliESDv0 *fCurrentV0=(AliESDv0*)(fESDEvent->GetV0(currentV0Index));
       if(!fCurrentV0){

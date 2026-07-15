@@ -339,6 +339,8 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg; //!
     TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos; //!
     TH2F**                            fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass; //!
+    THnSparseF**                      fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg; //!
+    THnSparseF**                      fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos; //!
     vector<Int_t>                     fQA7SelectedConversionLabels; //!
     TH2F**                            fHistoCombinatorialPt;                        //!
     TH3F**                            fHistoCombinatorialMothersPt;                 //!

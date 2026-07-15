@@ -278,6 +278,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg(NULL),
   fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos(NULL),
   fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass(NULL),
+  fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg(NULL),
+  fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos(NULL),
   fQA7SelectedConversionLabels(),
   fHistoCombinatorialPt(NULL),
   fHistoCombinatorialMothersPt(NULL),
@@ -713,6 +715,8 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg(NULL),
   fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos(NULL),
   fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass(NULL),
+  fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg(NULL),
+  fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos(NULL),
   fQA7SelectedConversionLabels(),
   fHistoCombinatorialPt(NULL),
   fHistoCombinatorialMothersPt(NULL),
@@ -2098,6 +2102,8 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
         fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNENeg = new TH2F*[fnCuts];
         fHistoTruePrimaryConvGammaReaderMCPtTrackTPCSignalNEPos = new TH2F*[fnCuts];
         fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass = new TH2F*[fnCuts];
+        fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg = new THnSparseF*[fnCuts];
+        fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos = new THnSparseF*[fnCuts];
       }
     }
 
@@ -2964,6 +2970,31 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
           }
           for (Int_t i = 0; i < 8; ++i) fHistoTruePrimaryConvGammaReaderMCPtSatellitePairClass[iCut]->GetYaxis()->SetBinLabel(i + 1, satellitePairLabels[i]);
 
+          const Int_t nPIDQualityDimensions = 11;
+          const Int_t pidQualityBins[nPIDQualityDimensions] = {8, 120, 80, 200, 200, 200, 41, 41, 41, 2, 2};
+          const Double_t pidQualityMin[nPIDQualityDimensions] = {6., 0., -2., -50., -50., 0., -0.5, -0.5, -0.5, -0.5, -0.5};
+          const Double_t pidQualityMax[nPIDQualityDimensions] = {10., 30., 2., 50., 50., 500., 163.5, 163.5, 163.5, 1.5, 1.5};
+          fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg[iCut] =
+            new THnSparseF("ESD_TruePrimaryConvGammaReader_TrackPIDQuality_ENeg",
+                           "ESD_TruePrimaryConvGammaReader_TrackPIDQuality_ENeg",
+                           nPIDQualityDimensions, pidQualityBins, pidQualityMin, pidQualityMax);
+          fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos[iCut] =
+            new THnSparseF("ESD_TruePrimaryConvGammaReader_TrackPIDQuality_EPos",
+                           "ESD_TruePrimaryConvGammaReader_TrackPIDQuality_EPos",
+                           nPIDQualityDimensions, pidQualityBins, pidQualityMin, pidQualityMax);
+          const char *pidQualityAxisTitles[nPIDQualityDimensions] = {
+            "p_{T,#gamma}^{MC}", "p_{track}", "#eta_{track}", "n#sigma_{TPC}^{#pi}",
+            "n#sigma_{TPC}^{e}", "TPC signal", "TPC N_{cls}", "TPC crossed rows",
+            "TPC signal N", "TPC refit", "condition"
+          };
+          for (THnSparseF *sparse : {fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg[iCut],
+                                     fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos[iCut]}) {
+            sparse->Sumw2();
+            for (Int_t axis = 0; axis < nPIDQualityDimensions; ++axis)
+              sparse->GetAxis(axis)->SetTitle(pidQualityAxisTitles[axis]);
+            fTrueList[iCut]->Add(sparse);
+          }
+
           const Int_t nBinsMinDaughterPtReaderMatch = 222;
           Double_t minDaughterPtReaderMatchBinning[nBinsMinDaughterPtReaderMatch + 1];
           for (Int_t i = 0; i <= 100; ++i) minDaughterPtReaderMatchBinning[i] = 0.002 * i;
@@ -3735,6 +3766,41 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
     }
   };
 
+  auto fillReaderTrackPIDQuality = [&](AliAODConversionPhoton *candidate, AliAODMCParticle *photon) {
+    if (fDoPhotonQA != 7 || !candidate || !photon || photon->Pt() < 6. || photon->Pt() >= 10.) return;
+    AliVTrack *negativeTrack = fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelNegative());
+    AliVTrack *positiveTrack = fiPhotonCut->GetTrack(fInputEvent, candidate->GetTrackLabelPositive());
+    AliPIDResponse *pidResponse = fiPhotonCut->GetPIDResponse();
+    if (!negativeTrack || !positiveTrack || !pidResponse) return;
+
+    const Double_t weight = fWeightJetJetMC * GetPhotonWeight(photon);
+    auto fillTrack = [&](AliVTrack *track, THnSparseF *sparse, Double_t condition) {
+      if (!track || !sparse) return;
+      Double_t values[11] = {
+        photon->Pt(),
+        track->P(),
+        track->Eta(),
+        pidResponse->NumberOfSigmasTPC(track, AliPID::kPion),
+        pidResponse->NumberOfSigmasTPC(track, AliPID::kElectron),
+        track->GetTPCsignal(),
+        TMath::Min(static_cast<Double_t>(track->GetTPCNcls()), 160.),
+        TMath::Min(static_cast<Double_t>(track->GetTPCCrossedRows()), 160.),
+        TMath::Min(static_cast<Double_t>(track->GetTPCsignalN()), 160.),
+        (track->GetStatus() & AliVTrack::kTPCrefit) ? 1. : 0.,
+        condition
+      };
+      sparse->Fill(values, weight);
+    };
+
+    // condition 0: both candidate tracks exist; condition 1: both also have positive signed MC labels.
+    fillTrack(negativeTrack, fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg[fiCut], 0.);
+    fillTrack(positiveTrack, fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos[fiCut], 0.);
+    if (negativeTrack->GetLabel() >= 0 && positiveTrack->GetLabel() >= 0) {
+      fillTrack(negativeTrack, fSparseTruePrimaryConvGammaReaderTrackPIDQualityENeg[fiCut], 1.);
+      fillTrack(positiveTrack, fSparseTruePrimaryConvGammaReaderTrackPIDQualityEPos[fiCut], 1.);
+    }
+  };
+
   // ProcessPhotonCandidates() starts after definition of following lambda function
   auto fillHistosAndTree = [&](AliAODConversionPhoton *thePhoton){
 
@@ -3825,7 +3891,10 @@ void AliAnalysisTaskGammaConvV1::ProcessPhotonCandidates()
       Int_t photonLabel = -1;
       AliAODMCParticle *photon = NULL;
       if (getAcceptedTruePrimaryConversion(iCandidate, photonLabel, photon)) {
-        if (lIsFromSelectedHeader) truePrimaryReaderResults[photonLabel].header = kTRUE;
+        if (lIsFromSelectedHeader) {
+          truePrimaryReaderResults[photonLabel].header = kTRUE;
+          fillReaderTrackPIDQuality(iCandidate, photon);
+        }
         else updateTruePrimaryResult(iCandidate, 0, 1, -1);
       }
     }
