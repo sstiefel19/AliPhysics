@@ -37,6 +37,8 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
 
     void SetV0ReaderName(TString name){fV0ReaderName=name; return;}
     void SetLightOutput(Bool_t flag ){fDoLightOutput = flag;}
+    void SetEventResampling(Int_t nSubsamples, Int_t excludedSubsample, ULong64_t seed = 0)
+      { fEventResamplingNSubsamples = nSubsamples; fEventResamplingExcludedSubsample = excludedSubsample; fEventResamplingSeed = seed; }
 
     void SetIsHeavyIon(Int_t flag)                                { fIsHeavyIon                 = flag    ;}
     void SetIsMC(Int_t isMC)                                      { fIsMC                       = isMC    ;}
@@ -88,6 +90,7 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     void MoveParticleAccordingToVertex(AliAODConversionPhoton* particle,const AliGammaConversionAODBGHandler::GammaConversionVertex *vertex);
     void UpdateEventByEventData();
     void SetLogBinningXTH2(TH2* histoRebin);
+    Int_t GetEventResamplingSubsample() const;
     Int_t GetSourceClassification(Int_t daughter, Int_t pdgCode);
     Float_t GetPhotonWeight(AliAODMCParticle* photon);
     Float_t GetPhotonWeightFromMeson(AliAODMCParticle* photon);
@@ -120,6 +123,11 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
     AliV0ReaderV1*                    fV0Reader;                                  //
     TString                           fV0ReaderName;
     Bool_t                            fDoLightOutput;                             // switch for running light output, kFALSE -> normal mode, kTRUE -> light mode
+    Int_t                             fEventResamplingNSubsamples;                // number of delete-one-group jackknife folds; 0 disables resampling
+    Int_t                             fEventResamplingExcludedSubsample;          // fold excluded by this task instance
+    ULong64_t                         fEventResamplingSeed;                       // seed mixed into the deterministic event hash
+    TH1I*                             fHistoEventResampling;                      //! resampling event-flow QA
+    TH1I*                             fHistoEventResamplingSubsample;             //! deterministic fold occupancy before exclusion
     AliGammaConversionAODBGHandler**  fBGHandler;                                 //
     AliConversionAODBGHandlerRP**     fBGHandlerRP;                               //
     AliVEvent*                        fInputEvent;                                //
@@ -562,7 +570,7 @@ class AliAnalysisTaskGammaConvV1 : public AliAnalysisTaskSE {
 
     AliAnalysisTaskGammaConvV1(const AliAnalysisTaskGammaConvV1&); // Prevent copy-construction
     AliAnalysisTaskGammaConvV1 &operator=(const AliAnalysisTaskGammaConvV1&); // Prevent assignment
-    ClassDef(AliAnalysisTaskGammaConvV1, 80);
+    ClassDef(AliAnalysisTaskGammaConvV1, 81);
 };
 
 #endif

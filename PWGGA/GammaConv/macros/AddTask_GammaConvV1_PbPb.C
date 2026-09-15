@@ -60,7 +60,10 @@ void AddTask_GammaConvV1_PbPb(
   Bool_t    processAODcheckForV0s         = kFALSE,   // flag for AOD check if V0s contained in AliAODs.root and AliAODGammaConversion.root
   Int_t     theUseGetMesonWeightNew       = 0,        // 0 = off, 1 = pT meson weights only, no photon weights, 2 = pT meson weights * pT-y meson weights + gamma-from-meson behavior, 3 = pT meson weights if configured + photon pT-eta, 4 = pT meson weights * pT-y meson weights
   // subwagon config
-  TString   additionalTrainConfig         = "0")       // additional counter for trainconfig + special settings
+  TString   additionalTrainConfig         = "0",      // additional counter for trainconfig + special settings
+  Int_t     eventResamplingNSubsamples    = 0,        // K for delete-one-group jackknife; 0 disables resampling
+  Int_t     eventResamplingExcludedSubsample = -1,    // excluded fold in [0,K); one task instance per fold
+  ULong64_t eventResamplingSeed           = 0)        // deterministic event-fold assignment seed
   {
 
   AliCutHandlerPCM cuts;
@@ -128,6 +131,28 @@ void AddTask_GammaConvV1_PbPb(
   if (acceptedAddedParticles<0) {
     Error(Form("%s_%i", addTaskName.Data(),  trainConfig), "No negative values allowed for acceptedAddedParticles");
     return;
+  }
+
+  const Bool_t enableEventResampling = eventResamplingNSubsamples >= 2;
+  if (eventResamplingNSubsamples < 0 || eventResamplingNSubsamples == 1 ||
+      (enableEventResampling &&
+       (eventResamplingExcludedSubsample < 0 ||
+        eventResamplingExcludedSubsample >= eventResamplingNSubsamples)) ||
+      (!enableEventResampling && eventResamplingExcludedSubsample != -1)) {
+    Error(Form("%s_%i", addTaskName.Data(), trainConfig),
+          "Invalid event resampling: use K >= 2 with excluded fold in [0,K), or K=0 and excluded=-1");
+    return;
+  }
+
+  TString eventResamplingSuffix = "";
+  if (enableEventResampling) {
+    eventResamplingSuffix = Form("_JK%02dof%02d_S%llu",
+                                 eventResamplingExcludedSubsample,
+                                 eventResamplingNSubsamples,
+                                 static_cast<unsigned long long>(eventResamplingSeed));
+    cout << "INFO: " << addTaskName.Data() << " enabling delete-one-group jackknife replica "
+         << eventResamplingExcludedSubsample << " of " << eventResamplingNSubsamples
+         << " with seed " << eventResamplingSeed << endl;
   }
 
   TObjArray *rmaxFacPtHardSetting = settingMaxFacPtHard.Tokenize("_");
@@ -257,12 +282,19 @@ void AddTask_GammaConvV1_PbPb(
   //========= Add task to the ANALYSIS manager =====
   //================================================
   AliAnalysisTaskGammaConvV1 *task=NULL;
-  task= new AliAnalysisTaskGammaConvV1(Form("GammaConvV1_%i",trainConfig));
+  TString taskName = Form("GammaConvV1_%i%s", trainConfig, eventResamplingSuffix.Data());
+  TString outputFileName = Form("GCo_%i%s.root", trainConfig, eventResamplingSuffix.Data());
+  task= new AliAnalysisTaskGammaConvV1(taskName.Data());
   task->SetIsHeavyIon(isHeavyIon);
   task->SetIsMC(isMC);
   task->SetV0ReaderName(V0ReaderName);
   task->SetLightOutput(enableLightOutput);
   task->SetDoPhotonWeights(theUseGetMesonWeightNew);
+  if (enableEventResampling) {
+    task->SetEventResampling(eventResamplingNSubsamples,
+                             eventResamplingExcludedSubsample,
+                             eventResamplingSeed);
+  }
   if(enableBDT) task->SetFileNameBDT(fileNameBDT.Data());
 
   //****************************************************************************************************
@@ -5756,8 +5788,8 @@ void AddTask_GammaConvV1_PbPb(
 
   //connect containers
   AliAnalysisDataContainer *coutput =
-    mgr->CreateContainer(Form("GammaConvV1_%i",trainConfig), TList::Class(),
-              AliAnalysisManager::kOutputContainer,Form("GCo_%i.root",trainConfig));
+    mgr->CreateContainer(taskName.Data(), TList::Class(),
+              AliAnalysisManager::kOutputContainer, outputFileName.Data());
 
   mgr->AddTask(task);
   mgr->ConnectInput(task,0,cinput);
@@ -5767,26 +5799,26 @@ void AddTask_GammaConvV1_PbPb(
     
     if(enableQAPhotonTask == 2 || enableQAPhotonTask == 5){
       if (initializedMatBudWeigths_existing) {
-	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s MBW Photon DCA tree",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, Form("GCo_%i.root",trainConfig)) );
+	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s MBW Photon DCA tree%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data(),eventResamplingSuffix.Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, outputFileName.Data()) );
       }else{
-	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s Photon DCA tree",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, Form("GCo_%i.root",trainConfig)) );
+	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s Photon DCA tree%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data(),eventResamplingSuffix.Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, outputFileName.Data()) );
       }
       nContainer++;
     }
     if(enableQAMesonTask == 2){
       if (initializedMatBudWeigths_existing) {
-	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s MBW Meson DCA tree",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, Form("GCo_%i.root",trainConfig)) );
+	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s MBW Meson DCA tree%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data(),eventResamplingSuffix.Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, outputFileName.Data()) );
       }else{
-	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s Meson DCA tree",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, Form("GCo_%i.root",trainConfig)) );
+	mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("%s_%s_%s Meson DCA tree%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data(),eventResamplingSuffix.Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, outputFileName.Data()) );
       }
       nContainer++;
     }
     if(enablePhotonTree){
-	    mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("TreeForPhotonMLData_%s_%s_%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, Form("GCo_%i.root",trainConfig)) );
+	    mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("TreeForPhotonMLData_%s_%s_%s%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data(),eventResamplingSuffix.Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, outputFileName.Data()) );
       nContainer++;
     }
     if(enableMesonTree){
-	    mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("TreeForMesonMLData_%s_%s_%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, Form("GCo_%i.root",trainConfig)) );
+	    mgr->ConnectOutput(task,nContainer,mgr->CreateContainer(Form("TreeForMesonMLData_%s_%s_%s%s",(cuts.GetEventCut(i)).Data(),(cuts.GetPhotonCut(i)).Data(),(cuts.GetMesonCut(i)).Data(),eventResamplingSuffix.Data()), TTree::Class(), AliAnalysisManager::kOutputContainer, outputFileName.Data()) );
       nContainer++;
     }
   }

@@ -45,6 +45,7 @@
 #include "AliESDpid.h"
 #include "AliAnalysisTaskGammaConvV1.h"
 #include "AliVParticle.h"
+#include "AliVHeader.h"
 #include "AliESDtrack.h"
 #include "AliESDtrackCuts.h"
 #include "AliGAKFVertex.h"
@@ -65,6 +66,11 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(): AliAnalysisTaskSE(),
   fV0Reader(NULL),
   fV0ReaderName("V0ReaderV1"),
   fDoLightOutput(kFALSE),
+  fEventResamplingNSubsamples(0),
+  fEventResamplingExcludedSubsample(-1),
+  fEventResamplingSeed(0),
+  fHistoEventResampling(NULL),
+  fHistoEventResamplingSubsample(NULL),
   fBGHandler(NULL),
   fBGHandlerRP(NULL),
   fInputEvent(NULL),
@@ -466,6 +472,11 @@ AliAnalysisTaskGammaConvV1::AliAnalysisTaskGammaConvV1(const char *name):
   fV0Reader(NULL),
   fV0ReaderName("V0ReaderV1"),
   fDoLightOutput(kFALSE),
+  fEventResamplingNSubsamples(0),
+  fEventResamplingExcludedSubsample(-1),
+  fEventResamplingSeed(0),
+  fHistoEventResampling(NULL),
+  fHistoEventResamplingSubsample(NULL),
   fBGHandler(NULL),
   fBGHandlerRP(NULL),
   fInputEvent(NULL),
@@ -1232,6 +1243,36 @@ void AliAnalysisTaskGammaConvV1::UserCreateOutputObjects(){
   if(fOutputContainer == NULL){
     fOutputContainer        = new TList();
     fOutputContainer->SetOwner(kTRUE);
+  }
+
+  const Bool_t eventResamplingEnabled = fEventResamplingNSubsamples >= 2;
+  if (fEventResamplingNSubsamples < 0 || fEventResamplingNSubsamples == 1 ||
+      (eventResamplingEnabled &&
+       (fEventResamplingExcludedSubsample < 0 ||
+        fEventResamplingExcludedSubsample >= fEventResamplingNSubsamples)) ||
+      (!eventResamplingEnabled && fEventResamplingExcludedSubsample != -1)) {
+    AliFatal(Form("Invalid event-resampling configuration: nSubsamples=%d, excludedSubsample=%d",
+                  fEventResamplingNSubsamples, fEventResamplingExcludedSubsample));
+    return;
+  }
+  if (eventResamplingEnabled) {
+    fHistoEventResampling = new TH1I(
+      "EventResampling",
+      Form("Delete-one-group jackknife event flow (K=%d, excluded=%d, seed=%llu)",
+           fEventResamplingNSubsamples, fEventResamplingExcludedSubsample,
+           static_cast<unsigned long long>(fEventResamplingSeed)),
+      3, -0.5, 2.5);
+    fHistoEventResampling->GetXaxis()->SetBinLabel(1, "Seen");
+    fHistoEventResampling->GetXaxis()->SetBinLabel(2, "Retained");
+    fHistoEventResampling->GetXaxis()->SetBinLabel(3, "Excluded");
+    fOutputContainer->Add(fHistoEventResampling);
+
+    fHistoEventResamplingSubsample = new TH1I(
+      "EventResamplingSubsample",
+      Form("Deterministic event-fold occupancy before exclusion (K=%d, seed=%llu);fold;events",
+           fEventResamplingNSubsamples, static_cast<unsigned long long>(fEventResamplingSeed)),
+      fEventResamplingNSubsamples, -0.5, fEventResamplingNSubsamples - 0.5);
+    fOutputContainer->Add(fHistoEventResamplingSubsample);
   }
 
   // Array of current cut's gammas
@@ -3018,12 +3059,54 @@ Bool_t AliAnalysisTaskGammaConvV1::Notify()
   return kTRUE;
 }
 //_____________________________________________________________________________
+Int_t AliAnalysisTaskGammaConvV1::GetEventResamplingSubsample() const
+{
+  if (!fInputEvent || fEventResamplingNSubsamples < 2) return -1;
+
+  ULong64_t eventId = 0;
+  const AliVHeader* header = fInputEvent->GetHeader();
+  if (header) {
+    eventId = static_cast<ULong64_t>(header->GetBunchCrossNumber())
+            + static_cast<ULong64_t>(header->GetOrbitNumber()) * 3564ULL
+            + static_cast<ULong64_t>(header->GetPeriodNumber()) * 16777215ULL * 3564ULL;
+  }
+
+  ULong64_t key = eventId;
+  key ^= static_cast<ULong64_t>(static_cast<UInt_t>(fInputEvent->GetRunNumber())) << 32;
+  if (eventId == 0) {
+    // Some simulated productions do not store period/orbit/bunch-crossing IDs.
+    // Entry plus the input-file name keeps their assignment deterministic.
+    key ^= static_cast<ULong64_t>(Entry());
+    if (fV0Reader) {
+      key ^= static_cast<ULong64_t>(fV0Reader->GetCurrentFileName().Hash()) << 32;
+    }
+  }
+  key += fEventResamplingSeed + 0x9e3779b97f4a7c15ULL;
+
+  // SplitMix64 finalizer: stable across platforms and independent of ROOT RNG state.
+  key = (key ^ (key >> 30)) * 0xbf58476d1ce4e5b9ULL;
+  key = (key ^ (key >> 27)) * 0x94d049bb133111ebULL;
+  key ^= key >> 31;
+  return static_cast<Int_t>(key % static_cast<ULong64_t>(fEventResamplingNSubsamples));
+}
+//_____________________________________________________________________________
 void AliAnalysisTaskGammaConvV1::UserExec(Option_t *)
 {
   //
   // Called for each event
   //
   fInputEvent = InputEvent();
+  if (fEventResamplingNSubsamples >= 2) {
+    const Int_t subsample = GetEventResamplingSubsample();
+    fHistoEventResampling->Fill(0);
+    fHistoEventResamplingSubsample->Fill(subsample);
+    if (subsample == fEventResamplingExcludedSubsample) {
+      fHistoEventResampling->Fill(2);
+      PostData(1, fOutputContainer);
+      return;
+    }
+    fHistoEventResampling->Fill(1);
+  }
   for(Int_t iCut = 0; iCut<fnCuts; iCut++){
     fHistoNEvents2[fiCut]->Fill(0);
   }
