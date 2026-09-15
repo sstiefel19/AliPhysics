@@ -651,6 +651,10 @@ TString AliCutHandlerPCM::GetSpecialSettingFromAddConfig (
         tempStr.Replace(0,2,"");
         cout << Form("INFO: GetSpecialSettingFromAddConfig will use running mode '%i' for the TrackMatcher!",tempStr.Atoi()) << endl;
         return tempStr;
+      } else if(tempStr.BeginsWith("JK") && !configString.CompareTo("JK")){
+        tempStr.Replace(0,2,"");
+        cout << "INFO: "<< addTaskName.Data() << " activating delete-one-group jackknife event resampling 'JK" << tempStr.Data() << "'" << endl;
+        return tempStr;
       } else if(tempStr.BeginsWith("JET") && !configString.CompareTo("JET")){
         tempStr.Replace(0,3,"");
         cout << Form("INFO: GetSpecialSettingFromAddConfig will use running mode '%i' for the JetReader!",tempStr.Atoi()) << endl;

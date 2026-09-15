@@ -60,10 +60,7 @@ void AddTask_GammaConvV1_PbPb(
   Bool_t    processAODcheckForV0s         = kFALSE,   // flag for AOD check if V0s contained in AliAODs.root and AliAODGammaConversion.root
   Int_t     theUseGetMesonWeightNew       = 0,        // 0 = off, 1 = pT meson weights only, no photon weights, 2 = pT meson weights * pT-y meson weights + gamma-from-meson behavior, 3 = pT meson weights if configured + photon pT-eta, 4 = pT meson weights * pT-y meson weights
   // subwagon config
-  TString   additionalTrainConfig         = "0",      // additional counter for trainconfig + special settings
-  Int_t     eventResamplingNSubsamples    = 0,        // K for delete-one-group jackknife; 0 disables resampling
-  Int_t     eventResamplingExcludedSubsample = -1,    // excluded fold in [0,K); one task instance per fold
-  ULong64_t eventResamplingSeed           = 0)        // deterministic event-fold assignment seed
+  TString   additionalTrainConfig         = "0")       // additional counter for trainconfig + special settings
   {
 
   AliCutHandlerPCM cuts;
@@ -133,19 +130,34 @@ void AddTask_GammaConvV1_PbPb(
     return;
   }
 
-  const Bool_t enableEventResampling = eventResamplingNSubsamples >= 2;
-  if (eventResamplingNSubsamples < 0 || eventResamplingNSubsamples == 1 ||
-      (enableEventResampling &&
-       (eventResamplingExcludedSubsample < 0 ||
-        eventResamplingExcludedSubsample >= eventResamplingNSubsamples)) ||
-      (!enableEventResampling && eventResamplingExcludedSubsample != -1)) {
-    Error(Form("%s_%i", addTaskName.Data(), trainConfig),
-          "Invalid event resampling: use K >= 2 with excluded fold in [0,K), or K=0 and excluded=-1");
-    return;
-  }
-
-  TString eventResamplingSuffix = "";
-  if (enableEventResampling) {
+  // Optional delete-one-group jackknife event resampling, see PWGGA/GammaConv/EventResampling.md.
+  // Requested with the token "JK<excluded>of<K>[s<seed>]" in additionalTrainConfig, e.g. "0_JK3of20".
+  Int_t     eventResamplingNSubsamples       = 0;   // K; 0 disables resampling
+  Int_t     eventResamplingExcludedSubsample = -1;  // fold excluded by this task instance, in [0,K)
+  ULong64_t eventResamplingSeed              = 0;   // seed mixed into the deterministic event hash
+  TString   eventResamplingSuffix            = "";  // appended to task and container names, empty if disabled
+  TString   sEventResampling                 = cuts.GetSpecialSettingFromAddConfig(additionalTrainConfig, "JK", "", addTaskName);
+  if (sEventResampling.Length() > 0) {
+    Ssiz_t posOf   = sEventResampling.Index("of");
+    Ssiz_t posSeed = sEventResampling.Index("s");
+    TString sExcluded = (posOf > 0) ? TString(sEventResampling(0, posOf)) : TString("");
+    TString sK        = (posOf > 0) ? TString(sEventResampling(posOf + 2, ((posSeed > posOf) ? posSeed : sEventResampling.Length()) - posOf - 2)) : TString("");
+    TString sSeed     = (posSeed > posOf) ? TString(sEventResampling(posSeed + 1, sEventResampling.Length() - posSeed - 1)) : TString("0");
+    if (sExcluded.Length() == 0 || sK.Length() == 0 || sSeed.Length() == 0 ||
+        !sExcluded.IsDigit() || !sK.IsDigit() || !sSeed.IsDigit()) {
+      Error(Form("%s_%i", addTaskName.Data(), trainConfig),
+            "Invalid event resampling token 'JK%s': expected JK<excluded>of<K>[s<seed>], e.g. JK3of20", sEventResampling.Data());
+      return;
+    }
+    eventResamplingNSubsamples       = sK.Atoi();
+    eventResamplingExcludedSubsample = sExcluded.Atoi();
+    eventResamplingSeed              = static_cast<ULong64_t>(sSeed.Atoll());
+    if (eventResamplingNSubsamples < 2 ||
+        eventResamplingExcludedSubsample < 0 || eventResamplingExcludedSubsample >= eventResamplingNSubsamples) {
+      Error(Form("%s_%i", addTaskName.Data(), trainConfig),
+            "Invalid event resampling token 'JK%s': need K >= 2 and excluded fold in [0,K)", sEventResampling.Data());
+      return;
+    }
     eventResamplingSuffix = Form("_JK%02dof%02d_S%llu",
                                  eventResamplingExcludedSubsample,
                                  eventResamplingNSubsamples,
@@ -154,6 +166,7 @@ void AddTask_GammaConvV1_PbPb(
          << eventResamplingExcludedSubsample << " of " << eventResamplingNSubsamples
          << " with seed " << eventResamplingSeed << endl;
   }
+  const Bool_t enableEventResampling = eventResamplingNSubsamples >= 2;
 
   TObjArray *rmaxFacPtHardSetting = settingMaxFacPtHard.Tokenize("_");
   if(rmaxFacPtHardSetting->GetEntries()<1){cout << "ERROR: AddTask_GammaConvV1_PbPb during parsing of settingMaxFacPtHard String '" << settingMaxFacPtHard.Data() << "'" << endl; return;}
@@ -282,8 +295,10 @@ void AddTask_GammaConvV1_PbPb(
   //========= Add task to the ANALYSIS manager =====
   //================================================
   AliAnalysisTaskGammaConvV1 *task=NULL;
+  // With event resampling the task and container names carry the replica suffix; the
+  // output file is the same as for the nominal task, so all replicas end up in one file.
   TString taskName = Form("GammaConvV1_%i%s", trainConfig, eventResamplingSuffix.Data());
-  TString outputFileName = Form("GCo_%i%s.root", trainConfig, eventResamplingSuffix.Data());
+  TString outputFileName = Form("GCo_%i.root", trainConfig);
   task= new AliAnalysisTaskGammaConvV1(taskName.Data());
   task->SetIsHeavyIon(isHeavyIon);
   task->SetIsMC(isMC);

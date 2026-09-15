@@ -46,6 +46,7 @@
 #include "AliAnalysisTaskGammaConvV1.h"
 #include "AliVParticle.h"
 #include "AliVHeader.h"
+#include "AliInputEventHandler.h"
 #include "AliESDtrack.h"
 #include "AliESDtrackCuts.h"
 #include "AliGAKFVertex.h"
@@ -3059,34 +3060,55 @@ Bool_t AliAnalysisTaskGammaConvV1::Notify()
   return kTRUE;
 }
 //_____________________________________________________________________________
+namespace {
+  // SplitMix64 finalizer, used as a hash combiner: stable across platforms and
+  // independent of the ROOT random-number state.
+  ULong64_t MixEventResamplingKey(ULong64_t key, ULong64_t value)
+  {
+    key ^= value;
+    key += 0x9e3779b97f4a7c15ULL;
+    key = (key ^ (key >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    key = (key ^ (key >> 27)) * 0x94d049bb133111ebULL;
+    return key ^ (key >> 31);
+  }
+}
+//_____________________________________________________________________________
 Int_t AliAnalysisTaskGammaConvV1::GetEventResamplingSubsample() const
 {
   if (!fInputEvent || fEventResamplingNSubsamples < 2) return -1;
 
-  ULong64_t eventId = 0;
-  const AliVHeader* header = fInputEvent->GetHeader();
-  if (header) {
-    eventId = static_cast<ULong64_t>(header->GetBunchCrossNumber())
-            + static_cast<ULong64_t>(header->GetOrbitNumber()) * 3564ULL
-            + static_cast<ULong64_t>(header->GetPeriodNumber()) * 16777215ULL * 3564ULL;
+  // Event identity from the raw-data header. Orbit numbers are 24 bit wide, so
+  // the period is weighted with 2^24 orbits. (AliRoot's GetEventIdAsLong() uses
+  // 2^24-1, which makes (period p, orbit 2^24-1) collide with (period p+1, orbit 0).)
+  ULong64_t headerId = 0;
+  if (const AliVHeader* header = fInputEvent->GetHeader()) {
+    headerId = static_cast<ULong64_t>(header->GetBunchCrossNumber())
+             + static_cast<ULong64_t>(header->GetOrbitNumber()) * 3564ULL
+             + static_cast<ULong64_t>(header->GetPeriodNumber()) * 16777216ULL * 3564ULL;
   }
 
-  ULong64_t key = eventId;
-  key ^= static_cast<ULong64_t>(static_cast<UInt_t>(fInputEvent->GetRunNumber())) << 32;
-  if (eventId == 0) {
-    // Some simulated productions do not store period/orbit/bunch-crossing IDs.
-    // Entry plus the input-file name keeps their assignment deterministic.
-    key ^= static_cast<ULong64_t>(Entry());
-    if (fV0Reader) {
-      key ^= static_cast<ULong64_t>(fV0Reader->GetCurrentFileName().Hash()) << 32;
+  // Position of the event in its input file. Entry() is the chain-wide entry
+  // number and therefore depends on how the job's file list was split; the
+  // entry within the current file plus the file name identify the event
+  // independently of the train configuration. Mixing them in unconditionally
+  // also keeps productions whose headers carry no or non-unique
+  // period/orbit/bunch-crossing numbers on a valid partition.
+  ULong64_t localEntry = static_cast<ULong64_t>(Entry());
+  ULong64_t fileNameHash = 0;
+  if (AliAnalysisManager* man = AliAnalysisManager::GetAnalysisManager()) {
+    if (AliVEventHandler* inputHandler = man->GetInputEventHandler()) {
+      if (TTree* chain = inputHandler->GetTree()) {
+        if (TTree* tree = chain->GetTree()) localEntry = static_cast<ULong64_t>(tree->GetReadEntry());
+        if (TFile* file = chain->GetCurrentFile()) fileNameHash = TString(file->GetName()).Hash();
+      }
     }
   }
-  key += fEventResamplingSeed + 0x9e3779b97f4a7c15ULL;
 
-  // SplitMix64 finalizer: stable across platforms and independent of ROOT RNG state.
-  key = (key ^ (key >> 30)) * 0xbf58476d1ce4e5b9ULL;
-  key = (key ^ (key >> 27)) * 0x94d049bb133111ebULL;
-  key ^= key >> 31;
+  ULong64_t key = MixEventResamplingKey(0, fEventResamplingSeed);
+  key = MixEventResamplingKey(key, static_cast<ULong64_t>(static_cast<UInt_t>(fInputEvent->GetRunNumber())));
+  key = MixEventResamplingKey(key, headerId);
+  key = MixEventResamplingKey(key, fileNameHash);
+  key = MixEventResamplingKey(key, localEntry);
   return static_cast<Int_t>(key % static_cast<ULong64_t>(fEventResamplingNSubsamples));
 }
 //_____________________________________________________________________________
