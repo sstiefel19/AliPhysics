@@ -12,7 +12,9 @@ void AddTask_PhotonQA(
   Bool_t    doEtaShiftV0Reader            = kFALSE,
   Bool_t    enableV0findingEffi           = kFALSE,              // enables V0finding efficiency histograms
   TString   fileNameExternalInputs        = "",
-  Bool_t    enableElecDeDxPostCalibration = kFALSE
+  Bool_t    enableElecDeDxPostCalibration = kFALSE,
+  TString   generatorName                 = "",     // needed for accepted-header selection in added-signal MC
+  Int_t     acceptedAddedParticles        = 0       // LHC20g10/LHC24a1: 0 all, 1 pi0, 6 eta, 13 pi0+eta
   ){
  
   AliCutHandlerPCM cuts;
@@ -47,8 +49,50 @@ void AddTask_PhotonQA(
 
   AliConvEventCuts *analysisEventCuts = new AliConvEventCuts();
   analysisEventCuts->SetV0ReaderName(V0ReaderName);
+  if (generatorName.CompareTo("") != 0)
+    analysisEventCuts->SetPeriodEnum(generatorName);
   analysisEventCuts->InitializeCutsFromCutString(TaskEventCutnumber.Data());
   analysisEventCuts->SetFillCutHistograms("",kFALSE);
+
+  if (isMC && analysisEventCuts->GetSignalRejection() == 2){
+    TList *HeaderList = new TList();
+    HeaderList->SetOwner(kTRUE);
+    if (generatorName.BeginsWith("LHC20g10") || generatorName.BeginsWith("LHC24a1")){
+      auto addHeader = [&HeaderList](Int_t selection){
+        if (selection == 1) HeaderList->Add(new TObjString("Injector (pi0)"));
+        else if (selection == 2) HeaderList->Add(new TObjString("Injector (pi0a)"));
+        else if (selection == 3) HeaderList->Add(new TObjString("Injector (pi0b)"));
+        else if (selection == 4) HeaderList->Add(new TObjString("Injector (pi0c)"));
+        else if (selection == 5) HeaderList->Add(new TObjString("Injector (pi0d)"));
+        else if (selection == 6) HeaderList->Add(new TObjString("Injector (eta)"));
+        else if (selection == 7) HeaderList->Add(new TObjString("Injector (etaa)"));
+        else if (selection == 8) HeaderList->Add(new TObjString("Hijing"));
+        else if (selection == 9) HeaderList->Add(new TObjString("Pileup"));
+      };
+      auto addHeaders = [&addHeader](Int_t first, Int_t last){
+        for (Int_t selection = first; selection <= last; ++selection) addHeader(selection);
+      };
+
+      if (acceptedAddedParticles == 0) addHeaders(1,9);
+      else if (acceptedAddedParticles >= 1 && acceptedAddedParticles <= 9) addHeader(acceptedAddedParticles);
+      else if (acceptedAddedParticles == 10) addHeaders(1,5);
+      else if (acceptedAddedParticles == 11) addHeaders(2,5);
+      else if (acceptedAddedParticles == 12) addHeaders(6,7);
+      else if (acceptedAddedParticles == 13){
+        addHeader(1);
+        addHeader(6);
+      } else {
+        cout << "ERROR invalid acceptedAddedParticles=" << acceptedAddedParticles
+             << " for " << generatorName.Data() << endl;
+        return;
+      }
+    } else {
+      cout << "ERROR signal-rejection mode 2 requires a supported generatorName "
+           << "(LHC20g10 or LHC24a1)" << endl;
+      return;
+    }
+    analysisEventCuts->SetAcceptedHeader(HeaderList);
+  }
 
   AliConversionPhotonCuts *analysisCuts = new AliConversionPhotonCuts();
   analysisCuts->SetV0ReaderName(V0ReaderName);
@@ -96,4 +140,3 @@ void AddTask_PhotonQA(
   //connect containers
   return;
 }
-

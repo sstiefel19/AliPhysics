@@ -530,14 +530,17 @@ void AliAnalysisTaskConversionQA::UserExec(Option_t *){
   fConversionGammas=fV0Reader->GetReconstructedGammas();
 
   if(fMCEvent){
-    if(fEventCuts->GetSignalRejection() != 0){
+    const Int_t signalRejection = fEventCuts->GetSignalRejection();
+    // Rejection mode 5 is evaluated candidate by candidate in IsParticleFromBGEvent
+    // and does not require the generator-header bookkeeping initialized here.
+    if(signalRejection != 0 && signalRejection != 5){
       if(fInputEvent->IsA()==AliESDEvent::Class()){
-        fEventCuts->GetNotRejectedParticles(fEventCuts->GetSignalRejection(),
+        fEventCuts->GetNotRejectedParticles(signalRejection,
                           fEventCuts->GetAcceptedHeader(),
                           fMCEvent);
       }
       else if(fInputEvent->IsA()==AliAODEvent::Class()){
-        fEventCuts->GetNotRejectedParticles(fEventCuts->GetSignalRejection(),
+        fEventCuts->GetNotRejectedParticles(signalRejection,
                           fEventCuts->GetAcceptedHeader(),
                           fInputEvent);
       }
