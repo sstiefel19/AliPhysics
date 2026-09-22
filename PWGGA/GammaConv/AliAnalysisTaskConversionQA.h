@@ -72,6 +72,8 @@ class AliAnalysisTaskConversionQA : public AliAnalysisTaskSE{
                                       AliAODTrack *posi );
     UInt_t IsTruePhotonESD          ( AliAODConversionPhoton *TruePhotonCandidate );
     UInt_t IsTruePhotonAOD          ( AliAODConversionPhoton *TruePhotonCandidate );
+    void ResetMCTruthInfo           ();
+    void FillMCTruthInfo            ( AliAODConversionPhoton *gamma );
     void CountTracks                ();
     void SetLogBinningXTH2          ( TH2* histoRebin );
         
@@ -136,13 +138,26 @@ class AliAnalysisTaskConversionQA : public AliAnalysisTaskSE{
     TVectorF                    fGammaConvCoord;            //
     TVectorF                    fDaughterProp;              //
     UInt_t                      fKind;                      //
+    Float_t                     fMCPhotonPt;                // true common-mother photon transverse momentum
+    Float_t                     fMCConversionR;             // true daughter production radius
+    Float_t                     fMCConversionZ;             // true daughter production z coordinate
+    Int_t                       fMCPositivePdg;              // positive-daughter PDG code
+    Int_t                       fMCNegativePdg;              // negative-daughter PDG code
+    Int_t                       fMCMotherPdg;                // common-mother PDG code
+    Int_t                       fMCSourcePdg;                // direct mother PDG code of the common mother
+    UChar_t                     fMCPrimaryStatus;           // 0 secondary, 1 primary, 255 unavailable
+    UChar_t                     fMCHeaderStatus;            // IsParticleFromBGEvent result, 255 unavailable
+    Float_t                     fMCTreeWeight;              // inverse PhotonQA tree-sampling probability
+    Float_t                     fPositiveNSigmaTPCRaw;      // raw positive-track electron TPC response
+    Float_t                     fNegativeNSigmaTPCRaw;      // raw negative-track electron TPC response
+    Float_t                     fPositiveNSigmaTPCUsed;     // response used by the task after optional postcalibration
+    Float_t                     fNegativeNSigmaTPCUsed;     // response used by the task after optional postcalibration
     Bool_t                      fIsMC;                      //
     Int_t                       fnGammaCandidates;          //
     Int_t*                      fMCStackPos;                //[fnGammaCandidates]
     Int_t*                      fMCStackNeg;                //[fnGammaCandidates]
     
-    ClassDef(AliAnalysisTaskConversionQA, 12);
+    ClassDef(AliAnalysisTaskConversionQA, 13);
 };
 
 #endif
-

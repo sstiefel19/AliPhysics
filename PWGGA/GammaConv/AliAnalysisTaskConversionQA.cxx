@@ -30,6 +30,7 @@
 #include "AliAODMCParticle.h"
 #include "AliAODMCHeader.h"
 #include "AliAODEvent.h"
+#include "AliMCParticle.h"
 
 class iostream;
 
@@ -121,6 +122,20 @@ AliAnalysisTaskConversionQA::AliAnalysisTaskConversionQA() : AliAnalysisTaskSE()
   fGammaConvCoord(5),
   fDaughterProp(24),
   fKind(0),
+  fMCPhotonPt(-999.f),
+  fMCConversionR(-999.f),
+  fMCConversionZ(-999.f),
+  fMCPositivePdg(0),
+  fMCNegativePdg(0),
+  fMCMotherPdg(0),
+  fMCSourcePdg(0),
+  fMCPrimaryStatus(255),
+  fMCHeaderStatus(255),
+  fMCTreeWeight(1.f),
+  fPositiveNSigmaTPCRaw(-999.f),
+  fNegativeNSigmaTPCRaw(-999.f),
+  fPositiveNSigmaTPCUsed(-999.f),
+  fNegativeNSigmaTPCUsed(-999.f),
   fIsMC(kFALSE),
   fnGammaCandidates(1),
   fMCStackPos(NULL),
@@ -214,6 +229,20 @@ AliAnalysisTaskConversionQA::AliAnalysisTaskConversionQA(const char *name) : Ali
   fGammaConvCoord(5),
   fDaughterProp(24),
   fKind(0),
+  fMCPhotonPt(-999.f),
+  fMCConversionR(-999.f),
+  fMCConversionZ(-999.f),
+  fMCPositivePdg(0),
+  fMCNegativePdg(0),
+  fMCMotherPdg(0),
+  fMCSourcePdg(0),
+  fMCPrimaryStatus(255),
+  fMCHeaderStatus(255),
+  fMCTreeWeight(1.f),
+  fPositiveNSigmaTPCRaw(-999.f),
+  fNegativeNSigmaTPCRaw(-999.f),
+  fPositiveNSigmaTPCUsed(-999.f),
+  fNegativeNSigmaTPCUsed(-999.f),
   fIsMC(kFALSE),
   fnGammaCandidates(1),
   fMCStackPos(NULL),
@@ -429,6 +458,20 @@ void AliAnalysisTaskConversionQA::UserCreateOutputObjects()
     fTreeQA->Branch("chi2ndf",&fGammaChi2NDF,"fGammaChi2NDF/F");
     if (fIsMC) {
       fTreeQA->Branch("kind",&fKind,"fKind/b");
+      fTreeQA->Branch("mcPhotonPt",&fMCPhotonPt,"fMCPhotonPt/F");
+      fTreeQA->Branch("mcConversionR",&fMCConversionR,"fMCConversionR/F");
+      fTreeQA->Branch("mcConversionZ",&fMCConversionZ,"fMCConversionZ/F");
+      fTreeQA->Branch("mcPositivePdg",&fMCPositivePdg,"fMCPositivePdg/I");
+      fTreeQA->Branch("mcNegativePdg",&fMCNegativePdg,"fMCNegativePdg/I");
+      fTreeQA->Branch("mcMotherPdg",&fMCMotherPdg,"fMCMotherPdg/I");
+      fTreeQA->Branch("mcSourcePdg",&fMCSourcePdg,"fMCSourcePdg/I");
+      fTreeQA->Branch("mcPrimaryStatus",&fMCPrimaryStatus,"fMCPrimaryStatus/b");
+      fTreeQA->Branch("mcHeaderStatus",&fMCHeaderStatus,"fMCHeaderStatus/b");
+      fTreeQA->Branch("treeWeight",&fMCTreeWeight,"fMCTreeWeight/F");
+      fTreeQA->Branch("positiveNSigmaTPCElectronRaw",&fPositiveNSigmaTPCRaw,"fPositiveNSigmaTPCRaw/F");
+      fTreeQA->Branch("negativeNSigmaTPCElectronRaw",&fNegativeNSigmaTPCRaw,"fNegativeNSigmaTPCRaw/F");
+      fTreeQA->Branch("positiveNSigmaTPCElectronUsed",&fPositiveNSigmaTPCUsed,"fPositiveNSigmaTPCUsed/F");
+      fTreeQA->Branch("negativeNSigmaTPCElectronUsed",&fNegativeNSigmaTPCUsed,"fNegativeNSigmaTPCUsed/F");
     }
   }
 
@@ -593,6 +636,8 @@ void AliAnalysisTaskConversionQA::ProcessQATree(AliAODConversionPhoton *gamma){
 
   if(!negTrack||!posTrack)return;
 
+  if (fIsMC) FillMCTruthInfo(gamma);
+
   fKind = 9;
   if(fMCEvent && fInputEvent->IsA()==AliESDEvent::Class()){
     fKind = IsTruePhotonESD(gamma);
@@ -610,14 +655,20 @@ void AliAnalysisTaskConversionQA::ProcessQATree(AliAODConversionPhoton *gamma){
   Double_t electronNSigmaTPCCor=0.;
   Double_t positronNSigmaTPC = pidResonse->NumberOfSigmasTPC(posTrack,AliPID::kElectron);
   Double_t positronNSigmaTPCCor=0.;
+  fPositiveNSigmaTPCRaw = positronNSigmaTPC;
+  fNegativeNSigmaTPCRaw = electronNSigmaTPC;
   if(fConversionCuts->GetDoElecDeDxPostCalibration()){
     electronNSigmaTPCCor = fConversionCuts->GetCorrectedElectronTPCResponse(negTrack->Charge(),electronNSigmaTPC,negTrack->P(),negTrack->Eta(),negTrack->GetNcls(1),gamma->GetConversionRadius());
     positronNSigmaTPCCor = fConversionCuts->GetCorrectedElectronTPCResponse(posTrack->Charge(),positronNSigmaTPC,posTrack->P(),posTrack->Eta(),posTrack->GetNcls(1),gamma->GetConversionRadius());
     fDaughterProp(3) =  positronNSigmaTPCCor;
     fDaughterProp(10) = electronNSigmaTPCCor;
+    fPositiveNSigmaTPCUsed = positronNSigmaTPCCor;
+    fNegativeNSigmaTPCUsed = electronNSigmaTPCCor;
   } else {
     fDaughterProp(3) =  pidResonse->NumberOfSigmasTPC(posTrack,AliPID::kElectron);
     fDaughterProp(10) =  pidResonse->NumberOfSigmasTPC(negTrack,AliPID::kElectron);
+    fPositiveNSigmaTPCUsed = positronNSigmaTPC;
+    fNegativeNSigmaTPCUsed = electronNSigmaTPC;
   }
   fDaughterProp(2) =  posTrack->GetTPCsignal();
   fDaughterProp(22) =  pidResonse->NumberOfSigmasTPC(posTrack,AliPID::kPion);
@@ -687,6 +738,97 @@ void AliAnalysisTaskConversionQA::ProcessQATree(AliAODConversionPhoton *gamma){
 
   if (fTreeQA){
     fTreeQA->Fill();
+  }
+}
+
+//________________________________________________________________________
+void AliAnalysisTaskConversionQA::ResetMCTruthInfo()
+{
+  fMCPhotonPt = -999.f;
+  fMCConversionR = -999.f;
+  fMCConversionZ = -999.f;
+  fMCPositivePdg = 0;
+  fMCNegativePdg = 0;
+  fMCMotherPdg = 0;
+  fMCSourcePdg = 0;
+  fMCPrimaryStatus = 255;
+  fMCHeaderStatus = 255;
+  fMCTreeWeight = 1.f;
+  fPositiveNSigmaTPCRaw = -999.f;
+  fNegativeNSigmaTPCRaw = -999.f;
+  fPositiveNSigmaTPCUsed = -999.f;
+  fNegativeNSigmaTPCUsed = -999.f;
+}
+
+//________________________________________________________________________
+void AliAnalysisTaskConversionQA::FillMCTruthInfo(AliAODConversionPhoton *gamma)
+{
+  ResetMCTruthInfo();
+  if (!gamma || !fMCEvent || !fInputEvent) return;
+
+  fMCTreeWeight = (ffillTree > 1.0 && gamma->GetPhotonPt() < fTreeHighPt) ? ffillTree : 1.f;
+
+  const AliVVertex* primaryVertex = fMCEvent->GetPrimaryVertex();
+  if (!primaryVertex) return;
+  const Double_t primaryX = primaryVertex->GetX();
+  const Double_t primaryY = primaryVertex->GetY();
+  const Double_t primaryZ = primaryVertex->GetZ();
+
+  if (fInputEvent->IsA() == AliAODEvent::Class()) {
+    TClonesArray* particles = dynamic_cast<TClonesArray*>(fInputEvent->FindListObject(AliAODMCParticle::StdBranchName()));
+    if (!particles) return;
+    const Int_t positiveLabel = gamma->GetMCLabelPositive();
+    const Int_t negativeLabel = gamma->GetMCLabelNegative();
+    if (positiveLabel < 0 || negativeLabel < 0 || positiveLabel >= particles->GetEntriesFast() || negativeLabel >= particles->GetEntriesFast()) return;
+
+    AliAODMCParticle* positive = static_cast<AliAODMCParticle*>(particles->At(positiveLabel));
+    AliAODMCParticle* negative = static_cast<AliAODMCParticle*>(particles->At(negativeLabel));
+    if (!positive || !negative) return;
+    fMCPositivePdg = positive->GetPdgCode();
+    fMCNegativePdg = negative->GetPdgCode();
+    fMCConversionR = TMath::Sqrt(positive->Xv() * positive->Xv() + positive->Yv() * positive->Yv());
+    fMCConversionZ = positive->Zv();
+
+    const Int_t motherLabel = positive->GetMother();
+    if (motherLabel < 0 || motherLabel != negative->GetMother() || motherLabel >= particles->GetEntriesFast()) return;
+    AliAODMCParticle* mother = static_cast<AliAODMCParticle*>(particles->At(motherLabel));
+    if (!mother) return;
+    fMCMotherPdg = mother->GetPdgCode();
+    fMCPhotonPt = mother->Pt();
+    fMCPrimaryStatus = fEventCuts->IsConversionPrimaryAOD(fInputEvent, mother, primaryX, primaryY, primaryZ) ? 1 : 0;
+    const Int_t headerStatus = fEventCuts->IsParticleFromBGEvent(motherLabel, fMCEvent, fInputEvent);
+    if (headerStatus >= 0 && headerStatus < 255) fMCHeaderStatus = static_cast<UChar_t>(headerStatus);
+
+    const Int_t sourceLabel = mother->GetMother();
+    if (sourceLabel >= 0 && sourceLabel < particles->GetEntriesFast()) {
+      AliAODMCParticle* source = static_cast<AliAODMCParticle*>(particles->At(sourceLabel));
+      if (source) fMCSourcePdg = source->GetPdgCode();
+    }
+    return;
+  }
+
+  AliMCParticle* positive = static_cast<AliMCParticle*>(gamma->GetPositiveMCDaughter(fMCEvent));
+  AliMCParticle* negative = static_cast<AliMCParticle*>(gamma->GetNegativeMCDaughter(fMCEvent));
+  if (!positive || !negative) return;
+  fMCPositivePdg = positive->PdgCode();
+  fMCNegativePdg = negative->PdgCode();
+  fMCConversionR = TMath::Sqrt(positive->Xv() * positive->Xv() + positive->Yv() * positive->Yv());
+  fMCConversionZ = positive->Zv();
+
+  const Int_t motherLabel = positive->GetMother();
+  if (motherLabel < 0 || motherLabel != negative->GetMother() || motherLabel >= fMCEvent->GetNumberOfTracks()) return;
+  AliMCParticle* mother = static_cast<AliMCParticle*>(fMCEvent->GetTrack(motherLabel));
+  if (!mother) return;
+  fMCMotherPdg = mother->PdgCode();
+  fMCPhotonPt = mother->Pt();
+  fMCPrimaryStatus = fEventCuts->IsConversionPrimaryESD(fMCEvent, motherLabel, primaryX, primaryY, primaryZ) ? 1 : 0;
+  const Int_t headerStatus = fEventCuts->IsParticleFromBGEvent(motherLabel, fMCEvent, fInputEvent);
+  if (headerStatus >= 0 && headerStatus < 255) fMCHeaderStatus = static_cast<UChar_t>(headerStatus);
+
+  const Int_t sourceLabel = mother->GetMother();
+  if (sourceLabel >= 0 && sourceLabel < fMCEvent->GetNumberOfTracks()) {
+    AliMCParticle* source = static_cast<AliMCParticle*>(fMCEvent->GetTrack(sourceLabel));
+    if (source) fMCSourcePdg = source->PdgCode();
   }
 }
 
