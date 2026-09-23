@@ -140,6 +140,8 @@ AliConversionPhotonCuts::AliConversionPhotonCuts(const char *name,const char *ti
   fDoTRDPID(kFALSE),
   fPIDnSigmaAboveElectronLine(100),
   fPIDnSigmaBelowElectronLine(-100),
+  fDoElecPDependentNSigmaBelowCut(kFALSE),
+  fFElecNSigmaBelowCut(NULL),
   fTofPIDnSigmaAboveElectronLine(100),
   fTofPIDnSigmaBelowElectronLine(-100),
   fPIDnSigmaAbovePionLine(0),
@@ -329,6 +331,8 @@ AliConversionPhotonCuts::AliConversionPhotonCuts(const AliConversionPhotonCuts &
   fDoTRDPID(ref.fDoTRDPID),
   fPIDnSigmaAboveElectronLine(ref.fPIDnSigmaAboveElectronLine),
   fPIDnSigmaBelowElectronLine(ref.fPIDnSigmaBelowElectronLine),
+  fDoElecPDependentNSigmaBelowCut(ref.fDoElecPDependentNSigmaBelowCut),
+  fFElecNSigmaBelowCut(ref.fFElecNSigmaBelowCut ? (TF1*)ref.fFElecNSigmaBelowCut->Clone() : NULL),
   fTofPIDnSigmaAboveElectronLine(ref.fTofPIDnSigmaAboveElectronLine),
   fTofPIDnSigmaBelowElectronLine(ref.fTofPIDnSigmaBelowElectronLine),
   fPIDnSigmaAbovePionLine(ref.fPIDnSigmaAbovePionLine),
@@ -497,6 +501,10 @@ AliConversionPhotonCuts::~AliConversionPhotonCuts() {
   if(fFAsymmetryCut != NULL){
     delete fFAsymmetryCut;
     fFAsymmetryCut = NULL;
+  }
+  if(fFElecNSigmaBelowCut != NULL){
+    delete fFElecNSigmaBelowCut;
+    fFElecNSigmaBelowCut = NULL;
   }
   if(fProfileContainingMaterialBudgetWeights){
       delete fProfileContainingMaterialBudgetWeights;
@@ -673,9 +681,16 @@ void AliConversionPhotonCuts::InitCutHistograms(TString name, Bool_t preCut){
   // dEdx Cuts
   fHistodEdxCuts=new TH2F(Form("dEdxCuts %s",GetCutNumber().Data()),"dEdxCuts vs p_{T,e}",11,-0.5,10.5,250,0,50);
   fHistodEdxCuts->GetXaxis()->SetBinLabel(1,"in");
-  fHistodEdxCuts->GetXaxis()->SetBinLabel(2,"TPCelectron");
-  fHistodEdxCuts->GetXaxis()->SetBinLabel(3,"TPCpion");
-  fHistodEdxCuts->GetXaxis()->SetBinLabel(4,"TPCpionhighp");
+  if(fDoElecPDependentNSigmaBelowCut){
+    // the p-dependent electron band already contains the pion side border, bins 3 and 4 stay empty
+    fHistodEdxCuts->GetXaxis()->SetBinLabel(2,"TPCelectronPdep");
+    fHistodEdxCuts->GetXaxis()->SetBinLabel(3,"unused");
+    fHistodEdxCuts->GetXaxis()->SetBinLabel(4,"unused");
+  } else {
+    fHistodEdxCuts->GetXaxis()->SetBinLabel(2,"TPCelectron");
+    fHistodEdxCuts->GetXaxis()->SetBinLabel(3,"TPCpion");
+    fHistodEdxCuts->GetXaxis()->SetBinLabel(4,"TPCpionhighp");
+  }
   fHistodEdxCuts->GetXaxis()->SetBinLabel(5,"TPCkaonlowprej");
   fHistodEdxCuts->GetXaxis()->SetBinLabel(6,"TPCprotonlowprej");
   fHistodEdxCuts->GetXaxis()->SetBinLabel(7,"TPCpionlowprej");
@@ -2078,49 +2093,55 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
   cutIndex++; //1
   if(fDodEdxSigmaCut == kTRUE && !fSwitchToKappa){
     // TPC Electron Line
+    // The lower (pion side) border of the accepted band is momentum dependent if
+    // fDoElecPDependentNSigmaBelowCut is set; otherwise the constant fPIDnSigmaBelowElectronLine is used.
+    Double_t nSigmaBelowElectronLine = GetElectronNSigmaBelowLine(fCurrentTrack->P());
     if(fDoElecDeDxPostCalibration){
-      if( electronNSigmaTPCCor < fPIDnSigmaBelowElectronLine ||  electronNSigmaTPCCor >fPIDnSigmaAboveElectronLine ){
+      if( electronNSigmaTPCCor < nSigmaBelowElectronLine ||  electronNSigmaTPCCor >fPIDnSigmaAboveElectronLine ){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
         return kFALSE;
       }
     } else{
-      if( electronNSigmaTPC < fPIDnSigmaBelowElectronLine || electronNSigmaTPC > fPIDnSigmaAboveElectronLine){
+      if( electronNSigmaTPC < nSigmaBelowElectronLine || electronNSigmaTPC > fPIDnSigmaAboveElectronLine){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
         return kFALSE;
       }
     }
     cutIndex++; //2
-    // TPC Pion Line
-    if( fCurrentTrack->P()>fPIDMinPnSigmaAbovePionLine && fCurrentTrack->P()<fPIDMaxPnSigmaAbovePionLine ){
-      if(fDoElecDeDxPostCalibration){
-        if( electronNSigmaTPCCor >fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
-          if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
-        }
-      } else{
-        if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
-          if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+    if(!fDoElecPDependentNSigmaBelowCut){
+      // TPC Pion Line
+      if( fCurrentTrack->P()>fPIDMinPnSigmaAbovePionLine && fCurrentTrack->P()<fPIDMaxPnSigmaAbovePionLine ){
+        if(fDoElecDeDxPostCalibration){
+          if( electronNSigmaTPCCor >nSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
+            if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
+            return kFALSE;
+          }
+        } else{
+          if( electronNSigmaTPC > nSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
+            if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
+            return kFALSE;
+          }
         }
       }
-    }
-    cutIndex++; //3
+      cutIndex++; //3
 
-    // High Pt Pion rej
-    if( fCurrentTrack->P()>fPIDMaxPnSigmaAbovePionLine ){
-      if(fDoElecDeDxPostCalibration){
-        if( electronNSigmaTPCCor > fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
-          if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
-        }
-      } else{
-        if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
-          if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
-          return kFALSE;
+      // High Pt Pion rej
+      if( fCurrentTrack->P()>fPIDMaxPnSigmaAbovePionLine ){
+        if(fDoElecDeDxPostCalibration){
+          if( electronNSigmaTPCCor > nSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
+            if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
+            return kFALSE;
+          }
+        } else{
+          if( electronNSigmaTPC > nSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
+            if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
+            return kFALSE;
+          }
         }
       }
+      cutIndex++; //4
     }
-    cutIndex++; //4
+    else{cutIndex+=2;} //4 the p-dependent electron band replaces the separate pion rejection
   }
   else{cutIndex+=3;} //4
 
@@ -2730,9 +2751,18 @@ void AliConversionPhotonCuts::PrintCutsWithValues() {
   printf("\t TPC refit \n");
   printf("\t no kinks \n");
   if (!fSwitchToKappa){
-    printf("\t accept: %3.2f < n sigma_{e,TPC} < %3.2f\n", fPIDnSigmaBelowElectronLine, fPIDnSigmaAboveElectronLine );
-    printf("\t reject: %3.2f < p_{e,T} < %3.2f, n sigma_{pi,TPC} < %3.2f\n", fPIDMinPnSigmaAbovePionLine, fPIDMaxPnSigmaAbovePionLine, fPIDnSigmaAbovePionLine );
-    printf("\t reject: p_{e,T} > %3.2f, n sigma_{pi,TPC} < %3.2f\n", fPIDMaxPnSigmaAbovePionLine, fPIDnSigmaAbovePionLineHighPt );
+    if (fDoElecPDependentNSigmaBelowCut && fFElecNSigmaBelowCut){
+      printf("\t accept: nSigmaLow(p) < n sigma_{e,TPC} < %3.2f, with nSigmaLow(p) = %3.2f + (%3.2f - %3.2f)*exp(-p/%3.2f)\n",
+             fPIDnSigmaAboveElectronLine, fFElecNSigmaBelowCut->GetParameter(1), fFElecNSigmaBelowCut->GetParameter(0),
+             fFElecNSigmaBelowCut->GetParameter(1), fFElecNSigmaBelowCut->GetParameter(2) );
+      printf("\t\t nSigmaLow = %3.2f, %3.2f, %3.2f, %3.2f at p = 0.5, 1.0, 2.0, 5.0 GeV/c\n",
+             GetElectronNSigmaBelowLine(0.5), GetElectronNSigmaBelowLine(1.0), GetElectronNSigmaBelowLine(2.0), GetElectronNSigmaBelowLine(5.0) );
+      printf("\t separate n sigma above pion line rejection switched off (cut string digits 9, 10, 11 ignored)\n");
+    } else {
+      printf("\t accept: %3.2f < n sigma_{e,TPC} < %3.2f\n", fPIDnSigmaBelowElectronLine, fPIDnSigmaAboveElectronLine );
+      printf("\t reject: %3.2f < p_{e,T} < %3.2f, n sigma_{pi,TPC} < %3.2f\n", fPIDMinPnSigmaAbovePionLine, fPIDMaxPnSigmaAbovePionLine, fPIDnSigmaAbovePionLine );
+      printf("\t reject: p_{e,T} > %3.2f, n sigma_{pi,TPC} < %3.2f\n", fPIDMaxPnSigmaAbovePionLine, fPIDnSigmaAbovePionLineHighPt );
+    }
     if (fDoPionRejectionLowP) printf("\t reject: p_{e,T} < %3.2f, -%3.2f < n sigma_{pi,TPC} < %3.2f\n", fPIDMinPPionRejectionLowP, fPIDnSigmaAtLowPAroundPionLine, fPIDnSigmaAtLowPAroundPionLine );
     if (fDoKaonRejectionLowP) printf("\t reject: -%3.2f < n sigma_{K,TPC} < %3.2f\n", fPIDnSigmaAtLowPAroundKaonLine, fPIDnSigmaAtLowPAroundKaonLine );
     if (fDoProtonRejectionLowP) printf("\t reject: -%3.2f < n sigma_{p,TPC} < %3.2f\n", fPIDnSigmaAtLowPAroundProtonLine, fPIDnSigmaAtLowPAroundProtonLine );
@@ -3528,6 +3558,14 @@ Bool_t AliConversionPhotonCuts::SetTPCClusterCut(Int_t clsTPCCut){   // Set Cut
 
 ///________________________________________________________________________
 Bool_t AliConversionPhotonCuts::SetTPCdEdxCutElectronLine(Int_t ededxSigmaCut){   // Set Cut
+
+  // every call starts from a constant lower border; the p-dependent cases below re-enable it
+  fDoElecPDependentNSigmaBelowCut = kFALSE;
+  if(fFElecNSigmaBelowCut != NULL){
+    delete fFElecNSigmaBelowCut;
+    fFElecNSigmaBelowCut = NULL;
+  }
+
   switch(ededxSigmaCut){
   case 0: // -10,10
     fPIDnSigmaBelowElectronLine=-10;
@@ -3605,12 +3643,96 @@ Bool_t AliConversionPhotonCuts::SetTPCdEdxCutElectronLine(Int_t ededxSigmaCut){ 
     fPIDnSigmaBelowElectronLine=-100;
     fPIDnSigmaAboveElectronLine=100;
     break;
+
+  // Cases 19 and above use a momentum dependent lower (pion side) border of the
+  // electron band and switch off the separate n sigma above pion line rejection,
+  // i.e. the cut string digits pidedxSigmaCut, piMomdedxSigmaCut and
+  // piMaxMomdedxSigmaCut have no effect. The border is
+  //   nSigma_low(p) = nSigmaHighP + (nSigmaLowP - nSigmaHighP) * exp(-p/pScale)
+  // so it starts at nSigmaLowP for p -> 0 and tightens towards nSigmaHighP with
+  // rising p, where the pion band approaches the electron line.
+  case 19: //j p-dependent, -4.0 -> -0.5, scale 2.5; upper 3
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-4.0,-0.5,2.5);
+    break;
+  case 20: //k p-dependent, -3.5 -> -0.5, scale 2.5; upper 3
+    fPIDnSigmaBelowElectronLine=-3.5;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-3.5,-0.5,2.5);
+    break;
+  case 21: //l p-dependent, -4.5 -> -0.5, scale 2.5; upper 3
+    fPIDnSigmaBelowElectronLine=-4.5;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-4.5,-0.5,2.5);
+    break;
+  case 22: //m p-dependent, -4.0 -> -1.0, scale 2.5; upper 3
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-4.0,-1.0,2.5);
+    break;
+  case 23: //n p-dependent, -4.0 -> 0.0, scale 2.5; upper 3
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-4.0,0.0,2.5);
+    break;
+  case 24: //o p-dependent, -4.0 -> -0.5, scale 1.5; upper 3
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-4.0,-0.5,1.5);
+    break;
+  case 25: //p p-dependent, -4.0 -> -0.5, scale 4.0; upper 3
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=3.;
+    SetPDependentElectronNSigmaBelowLine(-4.0,-0.5,4.0);
+    break;
+  case 26: //q p-dependent, -4.0 -> -0.5, scale 2.5; upper 2.5
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=2.5;
+    SetPDependentElectronNSigmaBelowLine(-4.0,-0.5,2.5);
+    break;
+  case 27: //r p-dependent, -4.0 -> -0.5, scale 2.5; upper 4
+    fPIDnSigmaBelowElectronLine=-4.0;
+    fPIDnSigmaAboveElectronLine=4.;
+    SetPDependentElectronNSigmaBelowLine(-4.0,-0.5,2.5);
+    break;
   default:
     AliError("TPCdEdxCutElectronLine not defined");
     return kFALSE;
 
   }
   return kTRUE;
+}
+
+///________________________________________________________________________
+void AliConversionPhotonCuts::SetPDependentElectronNSigmaBelowLine(Double_t nSigmaLowP, Double_t nSigmaHighP, Double_t pScale){
+  // Define the momentum dependent lower (pion side) border of the accepted TPC electron n sigma band:
+  //   nSigma_low(p) = nSigmaHighP + (nSigmaLowP - nSigmaHighP) * exp(-p/pScale)
+  // nSigmaLowP  border for p -> 0, where the pion band is far away from the electron line
+  // nSigmaHighP asymptotic border for large p, where the pion band approaches the electron line
+  // pScale      momentum scale over which the border tightens
+
+  if(fFElecNSigmaBelowCut != NULL){
+    delete fFElecNSigmaBelowCut;
+    fFElecNSigmaBelowCut = NULL;
+  }
+  if(pScale <= 0.){
+    AliError("pScale of the p-dependent electron n sigma border must be positive");
+    return;
+  }
+  fFElecNSigmaBelowCut = new TF1("fFElecNSigmaBelowCut","[1] + ([0]-[1])*TMath::Exp(-x/[2])",0.,100.);
+  fFElecNSigmaBelowCut->SetParameter(0,nSigmaLowP);
+  fFElecNSigmaBelowCut->SetParameter(1,nSigmaHighP);
+  fFElecNSigmaBelowCut->SetParameter(2,pScale);
+  fDoElecPDependentNSigmaBelowCut = kTRUE;
+}
+
+///________________________________________________________________________
+Double_t AliConversionPhotonCuts::GetElectronNSigmaBelowLine(Double_t p) const {
+  // Lower (pion side) border of the accepted TPC electron n sigma band at track momentum p
+
+  if(fDoElecPDependentNSigmaBelowCut && fFElecNSigmaBelowCut) return fFElecNSigmaBelowCut->Eval(p);
+  return fPIDnSigmaBelowElectronLine;
 }
 
 ///________________________________________________________________________

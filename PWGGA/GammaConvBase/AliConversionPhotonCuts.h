@@ -75,6 +75,12 @@ class AliAODMCParticle;
  * |                  23                       | DcaRPrimVtx            |
  * |                  24                       | DcaZPrimVtx            |
  * |                  25                       | EvetPlane              |
+ *
+ * ededxSigmaCut values of 19 (j) and above select a momentum dependent lower
+ * (pion side) border of the TPC electron n sigma band. In that case the separate
+ * n sigma above pion line rejection is switched off, i.e. the digits
+ * pidedxSigmaCut, piMomdedxSigmaCut and piMaxMomdedxSigmaCut have no effect.
+ * See AliConversionPhotonCuts::SetTPCdEdxCutElectronLine.
 */
 
 
@@ -229,6 +235,8 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Bool_t SetChi2GammaCut(Int_t chi2GammaCut);
     Bool_t SetTPCdEdxCutPionLine(Int_t pidedxSigmaCut);
     Bool_t SetTPCdEdxCutElectronLine(Int_t ededxSigmaCut);
+    void SetPDependentElectronNSigmaBelowLine(Double_t nSigmaLowP, Double_t nSigmaHighP, Double_t pScale);
+    Double_t GetElectronNSigmaBelowLine(Double_t p) const;
     Bool_t SetSinglePtCut(Int_t singlePtCut);
     Bool_t SetTPCClusterCut(Int_t clsTPCCut);
     Bool_t SetEtaCut(Int_t etaCut);
@@ -327,6 +335,8 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Bool_t            fDoTRDPID;                            ///< flag to use TRD pid
     Double_t          fPIDnSigmaAboveElectronLine;          ///< sigma cut
     Double_t          fPIDnSigmaBelowElectronLine;          ///< sigma cut
+    Bool_t            fDoElecPDependentNSigmaBelowCut;      ///< flag to use a p-dependent lower (pion side) border of the TPC electron n sigma band
+    TF1*              fFElecNSigmaBelowCut;                 ///< p-dependent lower (pion side) border of the TPC electron n sigma band
     Double_t          fTofPIDnSigmaAboveElectronLine;       ///< sigma cut RRnewTOF
     Double_t          fTofPIDnSigmaBelowElectronLine;       ///< sigma cut RRnewTOF
     Double_t          fPIDnSigmaAbovePionLine;              ///< sigma cut
@@ -473,7 +483,7 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     void RemovePhotonWithHigherChi2(TItRemove &theI1, TItRemove &theI2) const;
 
     /// \cond CLASSIMP
-    ClassDef(AliConversionPhotonCuts,41)
+    ClassDef(AliConversionPhotonCuts,42)
     /// \endcond
 };
 
