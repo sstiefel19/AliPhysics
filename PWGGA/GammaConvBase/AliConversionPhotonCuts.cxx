@@ -259,6 +259,9 @@ AliConversionPhotonCuts::AliConversionPhotonCuts(const char *name,const char *ti
   fnRBins(4),
   fHistoEleMapRecalib(NULL),
   fHistoPosMapRecalib(NULL),
+  fDoPionDeDxPostCalibration(kFALSE),
+  fHistoElePionMapRecalib(NULL),
+  fHistoPosPionMapRecalib(NULL),
   fGoodRegionCMin(0),
   fGoodRegionAMin(0),
   fBadRegionCMin(0),
@@ -278,8 +281,12 @@ AliConversionPhotonCuts::AliConversionPhotonCuts(const char *name,const char *ti
 
   fHistoEleMapRecalib  = new TH2S*[fnRBins];
   fHistoPosMapRecalib  = new TH2S*[fnRBins];
+  fHistoElePionMapRecalib = new TH2S*[fnRBins];
+  fHistoPosPionMapRecalib = new TH2S*[fnRBins];
 
   for (Int_t i = 0; i < fnRBins; i++) {
+    fHistoElePionMapRecalib[i] = NULL;
+    fHistoPosPionMapRecalib[i] = NULL;
     fHistoEleMapRecalib[i] = NULL;
     fHistoPosMapRecalib[i] = NULL;
   }
@@ -448,6 +455,9 @@ AliConversionPhotonCuts::AliConversionPhotonCuts(const AliConversionPhotonCuts &
   fnRBins(ref.fnRBins),
   fHistoEleMapRecalib(ref.fHistoEleMapRecalib),
   fHistoPosMapRecalib(ref.fHistoPosMapRecalib),
+  fDoPionDeDxPostCalibration(ref.fDoPionDeDxPostCalibration),
+  fHistoElePionMapRecalib(ref.fHistoElePionMapRecalib),
+  fHistoPosPionMapRecalib(ref.fHistoPosPionMapRecalib),
   fGoodRegionCMin(ref.fGoodRegionCMin),
   fGoodRegionAMin(ref.fGoodRegionAMin),
   fBadRegionCMin(ref.fBadRegionCMin),
@@ -824,6 +834,26 @@ Bool_t AliConversionPhotonCuts::InitializeElecDeDxPostCalibration(TString filena
     fHistoPosMapRecalib[i]  = (TH2S*)file->Get(Form("Pos_R%d_recalib",i));
    }
   }
+  if (fDoPionDeDxPostCalibration){
+    for(Int_t i=0;i<fnRBins;i++){
+      if (fIsRecalibDepTPCCl){
+        fHistoElePionMapRecalib[i] = (TH2S*)file->Get(Form("ElePi_Cl%d_recalib",i));
+        fHistoPosPionMapRecalib[i] = (TH2S*)file->Get(Form("PosPi_Cl%d_recalib",i));
+      } else {
+        fHistoElePionMapRecalib[i] = (TH2S*)file->Get(Form("ElePi_R%d_recalib",i));
+        fHistoPosPionMapRecalib[i] = (TH2S*)file->Get(Form("PosPi_R%d_recalib",i));
+      }
+    }
+    if (fHistoElePionMapRecalib[0] == NULL){
+      AliWarning(Form("Pion dEdx post-calibration requested but the maps are not in %s; pion response left uncorrected", filename.Data()));
+      fDoPionDeDxPostCalibration = kFALSE;
+    } else {
+      for(Int_t i=0;i<fnRBins;i++){
+        if (fHistoElePionMapRecalib[i]) fHistoElePionMapRecalib[i]->SetDirectory(0);
+        if (fHistoPosPionMapRecalib[i]) fHistoPosPionMapRecalib[i]->SetDirectory(0);
+      }
+    }
+  }
 
   if (fHistoEleMapRecalib[0] == NULL || fHistoEleMapRecalib[1] == NULL ||
       fHistoEleMapRecalib[2] == NULL || fHistoEleMapRecalib[3] == NULL  ){
@@ -878,6 +908,26 @@ Bool_t AliConversionPhotonCuts::LoadElecDeDxPostCalibration(Int_t runNumber) {
       fHistoPosMapRecalib[i]  = (TH2S*)arrayTPCRecalib->FindObject(Form("Pos_R%d_recalib",i));
     }
   }
+  if (fDoPionDeDxPostCalibration){
+    for(Int_t i=0;i<fnRBins;i++){
+      if (fIsRecalibDepTPCCl){
+        fHistoElePionMapRecalib[i] = (TH2S*)arrayTPCRecalib->FindObject(Form("ElePi_Cl%d_recalib",i));
+        fHistoPosPionMapRecalib[i] = (TH2S*)arrayTPCRecalib->FindObject(Form("PosPi_Cl%d_recalib",i));
+      } else {
+        fHistoElePionMapRecalib[i] = (TH2S*)arrayTPCRecalib->FindObject(Form("ElePi_R%d_recalib",i));
+        fHistoPosPionMapRecalib[i] = (TH2S*)arrayTPCRecalib->FindObject(Form("PosPi_R%d_recalib",i));
+      }
+    }
+    if (fHistoElePionMapRecalib[0] == NULL){
+      AliWarning("Pion dEdx post-calibration requested but the maps are not in the OADB; pion response left uncorrected");
+      fDoPionDeDxPostCalibration = kFALSE;
+    } else {
+      for(Int_t i=0;i<fnRBins;i++){
+        if (fHistoElePionMapRecalib[i]) fHistoElePionMapRecalib[i]->SetDirectory(0);
+        if (fHistoPosPionMapRecalib[i]) fHistoPosPionMapRecalib[i]->SetDirectory(0);
+      }
+    }
+  }
   if (fHistoEleMapRecalib[0] == NULL || fHistoEleMapRecalib[1] == NULL ||
       fHistoEleMapRecalib[2] == NULL || fHistoEleMapRecalib[3] == NULL  ){
     AliWarning("Histograms for dedx post calibration not found in %s despite being requested!");
@@ -894,7 +944,7 @@ Bool_t AliConversionPhotonCuts::LoadElecDeDxPostCalibration(Int_t runNumber) {
 }
 
 //_________________________________________________________________________
-Double_t AliConversionPhotonCuts::GetCorrectedElectronTPCResponse(Short_t charge, Double_t nsig, Double_t P, Double_t Eta, Double_t TPCCl, Double_t R){
+Double_t AliConversionPhotonCuts::GetCorrectedTPCResponse(TH2S** mapNeg, TH2S** mapPos, Short_t charge, Double_t nsig, Double_t P, Double_t Eta, Double_t TPCCl, Double_t R){
 
   Double_t Charge  = charge;
   Double_t CornSig = nsig;
@@ -925,37 +975,37 @@ Double_t AliConversionPhotonCuts::GetCorrectedElectronTPCResponse(Short_t charge
   }
 
   if(Charge<0){
-    if (fHistoEleMapRecalib[BinCorr] == NULL ){
+    if (mapNeg[BinCorr] == NULL ){
       // cout<< " histograms are null..., going out"<< endl;
       return CornSig;// do nothing if correction map is not avaible
     }
 
-    BinP    = fHistoEleMapRecalib[BinCorr]->GetXaxis()->FindBin(P);
-    BinEta  = fHistoEleMapRecalib[BinCorr]->GetYaxis()->FindBin(Eta);
+    BinP    = mapNeg[BinCorr]->GetXaxis()->FindBin(P);
+    BinEta  = mapNeg[BinCorr]->GetYaxis()->FindBin(Eta);
 
     if(P>0. && P<10.){
-      mean  = (Double_t)fHistoEleMapRecalib[BinCorr]->GetBinContent(BinP,BinEta)/1000;
-      width = (Double_t)fHistoEleMapRecalib[BinCorr]->GetBinError(BinP,BinEta)/1000;
+      mean  = (Double_t)mapNeg[BinCorr]->GetBinContent(BinP,BinEta)/1000;
+      width = (Double_t)mapNeg[BinCorr]->GetBinError(BinP,BinEta)/1000;
     }else if(P>=10.){// use bin edge value
-      mean  = (Double_t)fHistoEleMapRecalib[BinCorr]->GetBinContent(fHistoEleMapRecalib[BinCorr]->GetNbinsX(),BinEta)/1000;
-      width = (Double_t)fHistoEleMapRecalib[BinCorr]->GetBinError(fHistoEleMapRecalib[BinCorr]->GetNbinsX(),BinEta)/1000;
+      mean  = (Double_t)mapNeg[BinCorr]->GetBinContent(mapNeg[BinCorr]->GetNbinsX(),BinEta)/1000;
+      width = (Double_t)mapNeg[BinCorr]->GetBinError(mapNeg[BinCorr]->GetNbinsX(),BinEta)/1000;
     }
 
   }else{
-    if (fHistoPosMapRecalib[BinCorr] == NULL ){
+    if (mapPos[BinCorr] == NULL ){
       // cout<< " histograms are null..., going out"<< endl;
       return CornSig;// do nothing if correction map is not avaible
     }
 
-    BinP    = fHistoPosMapRecalib[BinCorr]->GetXaxis()->FindBin(P);
-    BinEta  = fHistoPosMapRecalib[BinCorr]->GetYaxis()->FindBin(Eta);
+    BinP    = mapPos[BinCorr]->GetXaxis()->FindBin(P);
+    BinEta  = mapPos[BinCorr]->GetYaxis()->FindBin(Eta);
 
     if(P>0. && P<10.){
-      mean  = (Double_t)fHistoPosMapRecalib[BinCorr]->GetBinContent(BinP,BinEta)/1000;
-      width = (Double_t)fHistoPosMapRecalib[BinCorr]->GetBinError(BinP,BinEta)/1000;
+      mean  = (Double_t)mapPos[BinCorr]->GetBinContent(BinP,BinEta)/1000;
+      width = (Double_t)mapPos[BinCorr]->GetBinError(BinP,BinEta)/1000;
     }else if(P>=10.){// use bin edge value
-      mean  = (Double_t)fHistoPosMapRecalib[BinCorr]->GetBinContent(fHistoPosMapRecalib[BinCorr]->GetNbinsX(),BinEta)/1000;
-      width = (Double_t)fHistoPosMapRecalib[BinCorr]->GetBinError(fHistoPosMapRecalib[BinCorr]->GetNbinsX(),BinEta)/1000;
+      mean  = (Double_t)mapPos[BinCorr]->GetBinContent(mapPos[BinCorr]->GetNbinsX(),BinEta)/1000;
+      width = (Double_t)mapPos[BinCorr]->GetBinError(mapPos[BinCorr]->GetNbinsX(),BinEta)/1000;
     }
   }
   if (width!=0.){
@@ -963,6 +1013,21 @@ Double_t AliConversionPhotonCuts::GetCorrectedElectronTPCResponse(Short_t charge
   }
   return CornSig;
 }
+///________________________________________________________________________
+Double_t AliConversionPhotonCuts::GetCorrectedElectronTPCResponse(Short_t charge, Double_t nsig, Double_t P, Double_t Eta, Double_t TPCCl, Double_t R){
+  return GetCorrectedTPCResponse(fHistoEleMapRecalib, fHistoPosMapRecalib, charge, nsig, P, Eta, TPCCl, R);
+}
+
+///________________________________________________________________________
+Double_t AliConversionPhotonCuts::GetCorrectedPionTPCResponse(Short_t charge, Double_t nsig, Double_t P, Double_t Eta, Double_t TPCCl, Double_t R){
+  // Same correction applied to the pion hypothesis. The maps recentre the pion band
+  // at zero and rescale it to unit width in each (p, eta, TPC cluster or R, charge)
+  // cell, so that a fixed n sigma pion rejection means the same thing in data and in
+  // simulation.
+  if (fHistoElePionMapRecalib == NULL || fHistoPosPionMapRecalib == NULL) return nsig;
+  return GetCorrectedTPCResponse(fHistoElePionMapRecalib, fHistoPosPionMapRecalib, charge, nsig, P, Eta, TPCCl, R);
+}
+
 ///________________________________________________________________________
 Bool_t AliConversionPhotonCuts::PhotonIsSelectedMC(AliMCParticle *particle, AliMCEvent *mcEvent, Bool_t checkForConvertedGamma){
   // MonteCarlo Photon Selection
@@ -2071,6 +2136,15 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     electronNSigmaTPCCor = GetCorrectedElectronTPCResponse(Charge,electronNSigmaTPC,P,Eta,fCurrentTrack->GetTPCNcls(),photon->GetConversionRadius());
   }
 
+  // Pion hypothesis, corrected with the pion maps when they are available. The
+  // rejection below is expressed in these units so that it selects the same physical
+  // region in data and in simulation.
+  Double_t pionNSigmaTPC = fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion);
+  if(fDoPionDeDxPostCalibration){
+    pionNSigmaTPC = GetCorrectedPionTPCResponse(Charge,pionNSigmaTPC,fCurrentTrack->P(),fCurrentTrack->Eta(),
+                                                fCurrentTrack->GetTPCNcls(),photon->GetConversionRadius());
+  }
+
   Int_t cutIndex=0;
   if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
   if(fHistoTPCdEdxSigbefore)fHistoTPCdEdxSigbefore->Fill(fCurrentTrack->P(), electronNSigmaTPC);
@@ -2093,12 +2167,12 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     // TPC Pion Line
     if( fCurrentTrack->P()>fPIDMinPnSigmaAbovePionLine && fCurrentTrack->P()<fPIDMaxPnSigmaAbovePionLine ){
       if(fDoElecDeDxPostCalibration){
-        if( electronNSigmaTPCCor >fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
+        if( electronNSigmaTPCCor >fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && pionNSigmaTPC<fPIDnSigmaAbovePionLine){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
           return kFALSE;
         }
       } else{
-        if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLine){
+        if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && pionNSigmaTPC<fPIDnSigmaAbovePionLine){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
           return kFALSE;
         }
@@ -2109,12 +2183,12 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
     // High Pt Pion rej
     if( fCurrentTrack->P()>fPIDMaxPnSigmaAbovePionLine ){
       if(fDoElecDeDxPostCalibration){
-        if( electronNSigmaTPCCor > fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
+        if( electronNSigmaTPCCor > fPIDnSigmaBelowElectronLine && electronNSigmaTPCCor < fPIDnSigmaAboveElectronLine && pionNSigmaTPC<fPIDnSigmaAbovePionLineHighPt){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
           return kFALSE;
         }
       } else{
-        if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion)<fPIDnSigmaAbovePionLineHighPt){
+        if( electronNSigmaTPC > fPIDnSigmaBelowElectronLine && electronNSigmaTPC < fPIDnSigmaAboveElectronLine && pionNSigmaTPC<fPIDnSigmaAbovePionLineHighPt){
           if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
           return kFALSE;
         }
@@ -2146,7 +2220,7 @@ Bool_t AliConversionPhotonCuts::dEdxCuts(AliVTrack *fCurrentTrack,AliConversionP
 
   if(fDoPionRejectionLowP == kTRUE && !fSwitchToKappa){
     if( fCurrentTrack->P()<fPIDMinPPionRejectionLowP ){
-      if( TMath::Abs(fPIDResponse->NumberOfSigmasTPC(fCurrentTrack,AliPID::kPion))<fPIDnSigmaAtLowPAroundPionLine){
+      if( TMath::Abs(pionNSigmaTPC)<fPIDnSigmaAtLowPAroundPionLine){
         if(fHistodEdxCuts)fHistodEdxCuts->Fill(cutIndex,fCurrentTrack->Pt());
         return kFALSE;
       }
@@ -2733,6 +2807,7 @@ void AliConversionPhotonCuts::PrintCutsWithValues() {
     printf("\t accept: %3.2f < n sigma_{e,TPC} < %3.2f\n", fPIDnSigmaBelowElectronLine, fPIDnSigmaAboveElectronLine );
     printf("\t reject: %3.2f < p_{e,T} < %3.2f, n sigma_{pi,TPC} < %3.2f\n", fPIDMinPnSigmaAbovePionLine, fPIDMaxPnSigmaAbovePionLine, fPIDnSigmaAbovePionLine );
     printf("\t reject: p_{e,T} > %3.2f, n sigma_{pi,TPC} < %3.2f\n", fPIDMaxPnSigmaAbovePionLine, fPIDnSigmaAbovePionLineHighPt );
+    if (fDoPionDeDxPostCalibration) printf("\t n sigma_{pi,TPC} taken from the postcalibrated pion response\n");
     if (fDoPionRejectionLowP) printf("\t reject: p_{e,T} < %3.2f, -%3.2f < n sigma_{pi,TPC} < %3.2f\n", fPIDMinPPionRejectionLowP, fPIDnSigmaAtLowPAroundPionLine, fPIDnSigmaAtLowPAroundPionLine );
     if (fDoKaonRejectionLowP) printf("\t reject: -%3.2f < n sigma_{K,TPC} < %3.2f\n", fPIDnSigmaAtLowPAroundKaonLine, fPIDnSigmaAtLowPAroundKaonLine );
     if (fDoProtonRejectionLowP) printf("\t reject: -%3.2f < n sigma_{p,TPC} < %3.2f\n", fPIDnSigmaAtLowPAroundProtonLine, fPIDnSigmaAtLowPAroundProtonLine );

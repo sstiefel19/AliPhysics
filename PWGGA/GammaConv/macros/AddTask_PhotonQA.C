@@ -12,7 +12,8 @@ void AddTask_PhotonQA(
   Bool_t    doEtaShiftV0Reader            = kFALSE,
   Bool_t    enableV0findingEffi           = kFALSE,              // enables V0finding efficiency histograms
   TString   fileNameExternalInputs        = "",
-  Bool_t    enableElecDeDxPostCalibration = kFALSE
+  Bool_t    enableElecDeDxPostCalibration = kFALSE,
+  Bool_t    enablePionDeDxPostCalibration = kFALSE   // additionally correct the TPC pion response with the maps in the same file
   ){
  
   AliCutHandlerPCM cuts;
@@ -59,11 +60,17 @@ void AddTask_PhotonQA(
         cout << "Setting custom dEdx recalibration file: " << fileNamedEdxPostCalib.Data() << endl;
      }
       analysisCuts->SetDoElecDeDxPostCalibration(enableElecDeDxPostCalibration);
+      if (enablePionDeDxPostCalibration){
+        analysisCuts->SetDoPionDeDxPostCalibration(kTRUE);
+        cout << "Enabled TPC dEdx recalibration of the pion response." << endl;
+      }
       cout << "Enabled TPC dEdx recalibration." << endl;
     } else{
       cout << "ERROR enableElecDeDxPostCalibration set to True even if MC file. Automatically reset to 0"<< endl;
       enableElecDeDxPostCalibration=kFALSE;
+      enablePionDeDxPostCalibration=kFALSE;
       analysisCuts->SetDoElecDeDxPostCalibration(kFALSE);
+      analysisCuts->SetDoPionDeDxPostCalibration(kFALSE);
     }
   }
   analysisCuts->InitializeCutsFromCutString(TaskPhotonCutnumber.Data());

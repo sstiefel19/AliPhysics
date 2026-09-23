@@ -620,9 +620,15 @@ void AliAnalysisTaskConversionQA::ProcessQATree(AliAODConversionPhoton *gamma){
     fDaughterProp(10) =  pidResonse->NumberOfSigmasTPC(negTrack,AliPID::kElectron);
   }
   fDaughterProp(2) =  posTrack->GetTPCsignal();
-  fDaughterProp(22) =  pidResonse->NumberOfSigmasTPC(posTrack,AliPID::kPion);
   fDaughterProp(9) =  negTrack->GetTPCsignal();
-  fDaughterProp(23) =  pidResonse->NumberOfSigmasTPC(negTrack,AliPID::kPion);
+  Double_t positronNSigmaTPCPion = pidResonse->NumberOfSigmasTPC(posTrack,AliPID::kPion);
+  Double_t electronNSigmaTPCPion = pidResonse->NumberOfSigmasTPC(negTrack,AliPID::kPion);
+  if(fConversionCuts->GetDoPionDeDxPostCalibration()){
+    positronNSigmaTPCPion = fConversionCuts->GetCorrectedPionTPCResponse(posTrack->Charge(),positronNSigmaTPCPion,posTrack->P(),posTrack->Eta(),posTrack->GetNcls(1),gamma->GetConversionRadius());
+    electronNSigmaTPCPion = fConversionCuts->GetCorrectedPionTPCResponse(negTrack->Charge(),electronNSigmaTPCPion,negTrack->P(),negTrack->Eta(),negTrack->GetNcls(1),gamma->GetConversionRadius());
+  }
+  fDaughterProp(22) =  positronNSigmaTPCPion;
+  fDaughterProp(23) =  electronNSigmaTPCPion;
   Int_t nPosClusterITS = 0;
   Int_t nNegClusterITS = 0;
   for(Int_t itsLayer = 0; itsLayer<6;itsLayer++){

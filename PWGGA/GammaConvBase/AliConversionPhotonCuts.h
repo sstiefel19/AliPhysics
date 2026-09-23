@@ -278,6 +278,9 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Bool_t InitializeElecDeDxPostCalibration(TString filename);
     Bool_t LoadElecDeDxPostCalibration(Int_t runNumber);
     Double_t GetCorrectedElectronTPCResponse(Short_t charge,Double_t nsig,Double_t P,Double_t Eta,Double_t TPCCl, Double_t R);
+    Double_t GetCorrectedPionTPCResponse(Short_t charge,Double_t nsig,Double_t P,Double_t Eta,Double_t TPCCl, Double_t R);
+    void SetDoPionDeDxPostCalibration(Bool_t k=kTRUE){fDoPionDeDxPostCalibration=k;}
+    Bool_t GetDoPionDeDxPostCalibration() const {return fDoPionDeDxPostCalibration;}
     void ForceTPCRecalibrationAsFunctionOfConvR(){fIsRecalibDepTPCCl = kFALSE;}
     void SetPtCutArraySize(Int_t ptCutArraySize){fPtCutArraySize = ptCutArraySize;return;};
     void SetRArraySize(Int_t rArraySize){fRArraySize = rArraySize;return;};
@@ -447,6 +450,9 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
     Int_t             fnRBins;                              //
     TH2S**            fHistoEleMapRecalib;  //[fnRBins]
     TH2S**            fHistoPosMapRecalib;  //[fnRBins]
+    Bool_t            fDoPionDeDxPostCalibration;           ///< flag to correct the TPC pion response with data-derived maps
+    TH2S**            fHistoElePionMapRecalib;  //[fnRBins]
+    TH2S**            fHistoPosPionMapRecalib;  //[fnRBins]
     Double_t          fGoodRegionCMin;                      ///< regions WITHOUT strong space charge distortions on C side
     Double_t          fGoodRegionAMin;                      ///<
     Double_t          fBadRegionCMin;                       ///< regions WITH strong space charge distortions on C side
@@ -472,8 +478,14 @@ class AliConversionPhotonCuts : public AliAnalysisCuts {
 
     void RemovePhotonWithHigherChi2(TItRemove &theI1, TItRemove &theI2) const;
 
+    /// shared implementation of the TPC response correction; mapNeg and mapPos are the
+    /// per-charge map arrays of the species to be corrected
+    Double_t GetCorrectedTPCResponse(TH2S** mapNeg, TH2S** mapPos, Short_t charge,
+                                     Double_t nsig, Double_t P, Double_t Eta,
+                                     Double_t TPCCl, Double_t R);
+
     /// \cond CLASSIMP
-    ClassDef(AliConversionPhotonCuts,41)
+    ClassDef(AliConversionPhotonCuts,42)
     /// \endcond
 };
 

@@ -53,6 +53,7 @@ void AddTask_GammaConvV1_PbPb(
   TString   periodNameAnchor              = "",       //
   Int_t     enableMatBudWeightsPi0        = 0,        // 1 = three radial bins, 2 = 10 radial bins
   Int_t     enableElecDeDxPostCalibration = 0,        // 0 = off, 1 = as function of TPC clusters, 2 = as function of convR. Option 2 is available only if FEPC is given.
+  Bool_t    enablePionDeDxPostCalibration = kFALSE,   // additionally correct the TPC pion response with the pion maps in the same source
   Int_t     enableFlattening              = 0,
   // special settings
   Bool_t    enableChargedPrimary          = kFALSE,
@@ -5706,6 +5707,8 @@ void AddTask_GammaConvV1_PbPb(
     analysisCuts[i]->SetLightOutput(enableLightOutput);
 
     if (enableElecDeDxPostCalibration){
+      // must be set before the maps are read, the loader only fetches the pion maps if it is on
+      if (enablePionDeDxPostCalibration) analysisCuts[i]->SetDoPionDeDxPostCalibration(kTRUE);
       int lNFnames = lArrFnamesdEdxPostCalib->GetEntriesFast();
       if (lNFnames){
         if (enableElecDeDxPostCalibration==2){
@@ -5718,6 +5721,8 @@ void AddTask_GammaConvV1_PbPb(
       }
       analysisCuts[i]->SetDoElecDeDxPostCalibration(kTRUE);
       cout << "Enabled TPC dEdx recalibration." << endl;
+      if (analysisCuts[i]->GetDoPionDeDxPostCalibration())
+        cout << "Enabled TPC dEdx recalibration of the pion response." << endl;
     }
     analysisCuts[i]->InitializeCutsFromCutString((cuts.GetPhotonCut(i)).Data());
 
